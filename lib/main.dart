@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:confetti/confetti.dart'; // NUEVO: Para la fiesta
-import 'package:animate_do/animate_do.dart'; // NUEVO: Para animaciones de entrada
-import 'dart:math'; // Para ángulos aleatorios del confeti
+import 'package:confetti/confetti.dart';
+import 'package:animate_do/animate_do.dart';
+import 'dart:math';
 
 import 'tarea_model.dart';
 import 'tarea_provider.dart';
@@ -30,7 +30,6 @@ class MiAppTareas extends StatelessWidget {
           primarySwatch: Colors.indigo,
           scaffoldBackgroundColor: const Color(0xFFF0F4F8),
           useMaterial3: true,
-          // Fuente un poco más redondeada si estuviera disponible, por defecto usamos la standard
           fontFamily: 'Roboto',
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
@@ -64,7 +63,7 @@ class ControladorInicio extends StatelessWidget {
   }
 }
 
-// --- PANTALLA SETUP (Sin cambios mayores) ---
+// --- PANTALLA SETUP ---
 class PantallaSetup extends StatefulWidget {
   const PantallaSetup({super.key});
 
@@ -237,7 +236,7 @@ class _BotonRol extends StatelessWidget {
   }
 }
 
-// --- PANTALLA PRINCIPAL (HIJO) - AHORA CON STATEFULWIDGET PARA CONFETI ---
+// --- PANTALLA PRINCIPAL (HIJO) ---
 class PantallaPrincipal extends StatefulWidget {
   const PantallaPrincipal({super.key});
 
@@ -251,7 +250,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   @override
   void initState() {
     super.initState();
-    // Iniciamos el controlador del confeti. Duration es cuánto dura la explosión.
     _confettiController = ConfettiController(duration: const Duration(seconds: 2));
   }
 
@@ -273,14 +271,12 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     String bloqueActual = proveedor.bloqueActual;
 
     return Scaffold(
-      // STACK NECESARIO PARA PONER EL CONFETI ENCIMA DE TODO
       body: Stack(
         alignment: Alignment.topCenter,
         children: [
           SafeArea(
             child: Column(
               children: [
-                // HEADER MEJORADO
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                   decoration: const BoxDecoration(
@@ -324,7 +320,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // Usamos FadeInUp de animate_do para que la lista entre suave
                       FadeInUp(delay: const Duration(milliseconds: 200), child: _crearSeccion("🌞 Mañana", Colors.orange, proveedor.tareasManana, proveedor, bloqueActual == 'manana')),
                       const SizedBox(height: 20),
                       FadeInUp(delay: const Duration(milliseconds: 400), child: _crearSeccion("⛅ Tarde", Colors.blue, proveedor.tareasTarde, proveedor, bloqueActual == 'tarde')),
@@ -338,10 +333,9 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             ),
           ),
 
-          // WIDGET DE CONFETI (Invisible hasta que se activa)
           ConfettiWidget(
             confettiController: _confettiController,
-            blastDirectionality: BlastDirectionality.explosive, // Explosión en todas direcciones
+            blastDirectionality: BlastDirectionality.explosive,
             shouldLoop: false,
             colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
             gravity: 0.3,
@@ -375,7 +369,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           IconData iconStatus = Icons.check_box_outline_blank;
           Color colorStatus = Colors.grey;
 
-          // Estilos visuales según estado
           if (tarea.estaEnRevision) {
             colorCard = Colors.orange[50]!;
             iconStatus = Icons.hourglass_top;
@@ -399,7 +392,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                   ]
               ),
               child: Card(
-                elevation: 0, // Quitamos elevación por defecto para usar nuestra sombra
+                elevation: 0,
                 margin: EdgeInsets.zero,
                 color: colorCard,
                 shape: RoundedRectangleBorder(
@@ -429,7 +422,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                       ? IconButton(
                     icon: const Icon(Icons.check_box_outline_blank, size: 34, color: Colors.grey),
                     onPressed: () {
-                      // ACCIÓN: DISPARAR CONFETI Y SONIDO
                       _confettiController.play();
                       proveedor.solicitarRevision(tarea);
                     },
@@ -570,8 +562,31 @@ class PantallaAdmin extends StatelessWidget {
                 child: ListTile(
                   leading: CircleAvatar(backgroundColor: Colors.indigo.withOpacity(0.1), child: Icon(tarea.icono, color: Colors.indigo, size: 20)),
                   title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("${tarea.bloque.toUpperCase()} • $infoFrecuencia", style: const TextStyle(fontSize: 12)), if(tarea.esObligatoria) const Text("🔑 Obligatoria", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold))]),
-                  trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _confirmarBorrar(context, proveedor, tarea)),
+
+                  // --- MODIFICACIÓN: AÑADIDO VALOR A LA VISTA ---
+                  subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("${tarea.bloque.toUpperCase()} • $infoFrecuencia", style: const TextStyle(fontSize: 12)),
+                        Text("💰 ${tarea.puntos} Puntos", style: TextStyle(color: Colors.indigo[400], fontWeight: FontWeight.bold, fontSize: 12)),
+                        if(tarea.esObligatoria) const Text("🔑 Obligatoria", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold))
+                      ]
+                  ),
+
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => _mostrarFormularioTarea(context, tarea),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _confirmarBorrar(context, proveedor, tarea),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _mostrarFormularioTarea(context, tarea),
                 ),
               );
             }),
@@ -601,7 +616,7 @@ class PantallaAdmin extends StatelessWidget {
   }
 }
 
-// --- FORMULARIO TAREA (IGUAL QUE V2.2) ---
+// --- FORMULARIO TAREA (ACTUALIZADO PARA EDITAR) ---
 class FormularioTarea extends StatefulWidget {
   final Tarea? tarea;
   const FormularioTarea({super.key, this.tarea});
@@ -678,7 +693,7 @@ class _FormularioTareaState extends State<FormularioTarea> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Nueva Misión", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(widget.tarea == null ? "Nueva Misión" : "Editar Misión", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
             if (widget.tarea == null) ...[
               const SizedBox(height: 10), const Text("🚀 Rutinas Rápidas:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 8),
               SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _plantillas.map((p) => Padding(padding: const EdgeInsets.only(right: 8.0), child: ActionChip(avatar: Icon(p['icono'], size: 16, color: Colors.white), label: Text(p['nombre']), backgroundColor: Colors.indigo.shade300, labelStyle: const TextStyle(color: Colors.white, fontSize: 12), onPressed: () => _cargarPlantilla(p)))).toList())),
@@ -697,7 +712,17 @@ class _FormularioTareaState extends State<FormularioTarea> {
             const SizedBox(height: 10),
             SizedBox(height: 60, child: ListView(scrollDirection: Axis.horizontal, children: _iconosDisponibles.map((icon) => GestureDetector(onTap: () => setState(() => _icono = icon), child: Container(margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _icono == icon ? Colors.indigo : Colors.grey[200], shape: BoxShape.circle), child: Icon(icon, color: _icono == icon ? Colors.white : Colors.black54)))).toList())),
             const SizedBox(height: 20),
-            ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)), onPressed: () { if (_nombreCtrl.text.isEmpty) return; if (_tipoRecurrencia == 'fecha_fija' && _fechaFija == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Selecciona una fecha para el reto"))); return; } proveedor.agregarTarea(nombre: _nombreCtrl.text, puntos: int.tryParse(_puntosCtrl.text) ?? 0, obligatoria: _esObligatoria, icon: _icono, bloque: _bloque, tipoRecurrencia: _tipoRecurrencia, diasSemana: _diasSeleccionados, fechaEspecifica: _fechaFija); Navigator.pop(context); }, child: const Text("GUARDAR MISIÓN")),
+            ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)), onPressed: () {
+              if (_nombreCtrl.text.isEmpty) return;
+              if (_tipoRecurrencia == 'fecha_fija' && _fechaFija == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Selecciona una fecha para el reto"))); return; }
+
+              if (widget.tarea == null) {
+                proveedor.agregarTarea(nombre: _nombreCtrl.text, puntos: int.tryParse(_puntosCtrl.text) ?? 0, obligatoria: _esObligatoria, icon: _icono, bloque: _bloque, tipoRecurrencia: _tipoRecurrencia, diasSemana: _diasSeleccionados, fechaEspecifica: _fechaFija);
+              } else {
+                proveedor.editarTarea(widget.tarea!, nombre: _nombreCtrl.text, puntos: int.tryParse(_puntosCtrl.text) ?? 0, obligatoria: _esObligatoria, icon: _icono, bloque: _bloque, tipoRecurrencia: _tipoRecurrencia, diasSemana: _diasSeleccionados, fechaEspecifica: _fechaFija);
+              }
+              Navigator.pop(context);
+            }, child: Text(widget.tarea == null ? "CREAR MISIÓN" : "GUARDAR CAMBIOS")),
             const SizedBox(height: 30),
           ],
         ),

@@ -33,7 +33,7 @@ class TareaProvider extends ChangeNotifier {
     }).toList();
   }
 
-  // 2. NUEVO: INVENTARIO TOTAL (Para el Admin - Muestra TODO sin filtrar fecha)
+  // 2. INVENTARIO TOTAL (Para el Admin - Muestra TODO sin filtrar fecha)
   List<Tarea> get listaTodasLasTareas {
     if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
     return _cajaTareas!.values.toList();
@@ -137,6 +137,31 @@ class TareaProvider extends ChangeNotifier {
         ultimoDiaCompletado: 0
     );
     await _cajaTareas!.add(nuevaTarea);
+    notifyListeners();
+  }
+
+  // NUEVO: Método para editar tareas existentes
+  Future<void> editarTarea(
+      Tarea tarea, {
+        required String nombre,
+        required int puntos,
+        required bool obligatoria,
+        required IconData icon,
+        required String bloque,
+        required String tipoRecurrencia,
+        List<int> diasSemana = const [1, 2, 3, 4, 5, 6, 7],
+        DateTime? fechaEspecifica,
+      }) async {
+    tarea.nombre = nombre;
+    tarea.puntos = puntos;
+    tarea.esObligatoria = obligatoria;
+    tarea.iconoCodePoint = icon.codePoint;
+    tarea.bloque = bloque;
+    tarea.tipoRecurrencia = tipoRecurrencia;
+    tarea.diasSemana = diasSemana;
+    tarea.fechaEspecifica = fechaEspecifica;
+
+    await tarea.save(); // Guarda los cambios en Hive
     notifyListeners();
   }
 
