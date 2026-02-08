@@ -20,16 +20,20 @@ class TareaAdapter extends TypeAdapter<Tarea> {
       nombre: fields[0] as String,
       puntos: fields[1] as int,
       esObligatoria: fields[2] as bool,
-      estaCompletada: fields[3] as bool,
+      estado: fields[3] as String,
       iconoCodePoint: fields[4] as int,
       bloque: fields[5] as String,
+      tipoRecurrencia: fields[6] as String,
+      diasSemana: (fields[7] as List).cast<int>(),
+      fechaEspecifica: fields[8] as DateTime?,
+      ultimoDiaCompletado: fields[9] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, Tarea obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.nombre)
       ..writeByte(1)
@@ -37,11 +41,19 @@ class TareaAdapter extends TypeAdapter<Tarea> {
       ..writeByte(2)
       ..write(obj.esObligatoria)
       ..writeByte(3)
-      ..write(obj.estaCompletada)
+      ..write(obj.estado)
       ..writeByte(4)
       ..write(obj.iconoCodePoint)
       ..writeByte(5)
-      ..write(obj.bloque);
+      ..write(obj.bloque)
+      ..writeByte(6)
+      ..write(obj.tipoRecurrencia)
+      ..writeByte(7)
+      ..write(obj.diasSemana)
+      ..writeByte(8)
+      ..write(obj.fechaEspecifica)
+      ..writeByte(9)
+      ..write(obj.ultimoDiaCompletado);
   }
 
   @override

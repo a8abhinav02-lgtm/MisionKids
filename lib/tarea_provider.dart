@@ -8,26 +8,52 @@ class TareaProvider extends ChangeNotifier {
   bool isLoading = true;
 
   // --- GETTERS ---
-  List<Tarea> get listaTareas {
+
+  // 1. LISTA MAESTRA (Solo tareas que tocan HOY - Para el Niño)
+  List<Tarea> get listaTareasHoy {
+    if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
+    final hoy = DateTime.now();
+
+    return _cajaTareas!.values.where((t) {
+      // Lógica de Recurrencia: ¿Esta tarea debe aparecer hoy?
+      if (t.tipoRecurrencia == 'diaria') return true;
+
+      if (t.tipoRecurrencia == 'semanal') {
+        // weekday: 1=Lunes, 7=Domingo
+        return t.diasSemana.contains(hoy.weekday);
+      }
+
+      if (t.tipoRecurrencia == 'fecha_fija' && t.fechaEspecifica != null) {
+        return t.fechaEspecifica!.year == hoy.year &&
+            t.fechaEspecifica!.month == hoy.month &&
+            t.fechaEspecifica!.day == hoy.day;
+      }
+
+      return false; // Por defecto no mostrar
+    }).toList();
+  }
+
+  // 2. NUEVO: INVENTARIO TOTAL (Para el Admin - Muestra TODO sin filtrar fecha)
+  List<Tarea> get listaTodasLasTareas {
     if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
     return _cajaTareas!.values.toList();
   }
 
-  List<Tarea> get tareasManana => listaTareas.where((t) => t.bloque == 'manana').toList();
-  List<Tarea> get tareasTarde => listaTareas.where((t) => t.bloque == 'tarde').toList();
-  List<Tarea> get tareasNoche => listaTareas.where((t) => t.bloque == 'noche').toList();
+  // Filtros por bloque (Solo de las visibles hoy)
+  List<Tarea> get tareasManana => listaTareasHoy.where((t) => t.bloque == 'manana').toList();
+  List<Tarea> get tareasTarde => listaTareasHoy.where((t) => t.bloque == 'tarde').toList();
+  List<Tarea> get tareasNoche => listaTareasHoy.where((t) => t.bloque == 'noche').toList();
 
-  // --- NUEVOS GETTERS DE CONFIGURACIÓN (OPCIÓN A) ---
-  // Verifica si ya se hizo el setup inicial
+  // 3. Tareas esperando validación de Papá
+  List<Tarea> get tareasPorRevisar {
+    if (_cajaTareas == null) return [];
+    return _cajaTareas!.values.where((t) => t.estado == 'revision').toList();
+  }
+
+  // Configuración
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
-
-  // Datos del Padre
   String get pinPadre => _cajaConfig?.get('pin_padre', defaultValue: '') ?? '';
-
-  // Datos del Hijo (Gestionados por el padre)
   String get nombreHijo => _cajaConfig?.get('nombre_hijo', defaultValue: 'Hijo') ?? 'Hijo';
-
-  // Meta de ahorro
   double get metaAhorro => _cajaConfig?.get('meta', defaultValue: 2000000.0) ?? 2000000.0;
 
   // Lógica del Reloj
@@ -40,10 +66,12 @@ class TareaProvider extends ChangeNotifier {
 
   bool esBloqueActivo(String bloqueTarea) => bloqueTarea == bloqueActual;
 
+  // DINERO: Solo suma si está 'aprobada'
   int get totalDinero {
+    if (_cajaTareas == null) return 0;
     int total = 0;
-    for (var tarea in listaTareas) {
-      if (tarea.estaCompletada) total += tarea.puntos;
+    for (var tarea in _cajaTareas!.values) {
+      if (tarea.estado == 'aprobada') total += tarea.puntos;
     }
     return total;
   }
@@ -53,70 +81,67 @@ class TareaProvider extends ChangeNotifier {
     _cajaTareas = await Hive.openBox<Tarea>('caja_tareas_v5');
     _cajaConfig = await Hive.openBox('caja_config');
 
-    // Datos por defecto SOLO si está vacío (Tareas de ejemplo)
-    if (_cajaTareas!.isEmpty) {
-      await _agregarTarea("Cepillarse Dientes", 0, true, Icons.cleaning_services, 'manana');
-      await _agregarTarea("Recoger Pijama", 660, false, Icons.checkroom, 'manana');
-    }
+    _verificarNuevoDia();
 
     isLoading = false;
     notifyListeners();
   }
 
-  // --- NUEVA LÓGICA: SETUP DE PRIMERA VEZ ---
+  void _verificarNuevoDia() {
+    final hoyDiaAnio = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+
+    for (var tarea in _cajaTareas!.values) {
+      if (tarea.tipoRecurrencia != 'fecha_fija') {
+        if (tarea.ultimoDiaCompletado != hoyDiaAnio && (tarea.estado == 'aprobada' || tarea.estado == 'revision')) {
+          tarea.estado = 'pendiente';
+          tarea.save();
+        }
+      }
+    }
+  }
+
+  // --- SETUP ---
   Future<void> registrarAdminInicial(String nuevoPin, String nombreHijoInicial) async {
     await _cajaConfig!.put('pin_padre', nuevoPin);
     await _cajaConfig!.put('nombre_hijo', nombreHijoInicial);
-    await _cajaConfig!.put('setup_completo', true); // Marca que ya no es primera vez
+    await _cajaConfig!.put('setup_completo', true);
     notifyListeners();
   }
 
-  // --- GESTIÓN DE PERFILES (PADRE CONTROLA TODO) ---
   Future<void> actualizarConfiguracionHijo(String nuevoNombre) async {
     await _cajaConfig!.put('nombre_hijo', nuevoNombre);
     notifyListeners();
   }
 
-  Future<void> cambiarPinPadre(String nuevoPin) async {
-    await _cajaConfig!.put('pin_padre', nuevoPin);
-    notifyListeners();
-  }
-
   // --- GESTIÓN DE TAREAS ---
-  Future<void> agregarTarea(String nombre, int puntos, bool obligatoria, IconData icon, String bloque) async {
+  Future<void> agregarTarea({
+    required String nombre,
+    required int puntos,
+    required bool obligatoria,
+    required IconData icon,
+    required String bloque,
+    required String tipoRecurrencia,
+    List<int> diasSemana = const [1,2,3,4,5,6,7],
+    DateTime? fechaEspecifica,
+  }) async {
     final nuevaTarea = Tarea(
-      nombre: nombre,
-      puntos: puntos,
-      esObligatoria: obligatoria,
-      iconoCodePoint: icon.codePoint,
-      bloque: bloque,
+        nombre: nombre,
+        puntos: puntos,
+        esObligatoria: obligatoria,
+        iconoCodePoint: icon.codePoint,
+        bloque: bloque,
+        estado: 'pendiente',
+        tipoRecurrencia: tipoRecurrencia,
+        diasSemana: diasSemana,
+        fechaEspecifica: fechaEspecifica,
+        ultimoDiaCompletado: 0
     );
     await _cajaTareas!.add(nuevaTarea);
     notifyListeners();
   }
 
-  Future<void> _agregarTarea(String nombre, int puntos, bool obligatoria, IconData icon, String bloque) async {
-    await _cajaTareas!.add(Tarea(
-      nombre: nombre,
-      puntos: puntos,
-      esObligatoria: obligatoria,
-      iconoCodePoint: icon.codePoint,
-      bloque: bloque,
-    ));
-  }
-
   Future<void> eliminarTarea(Tarea tarea) async {
     await tarea.delete();
-    notifyListeners();
-  }
-
-  Future<void> editarTarea(Tarea tarea, String nombre, int puntos, bool obligatoria, IconData icon, String bloque) async {
-    tarea.nombre = nombre;
-    tarea.puntos = puntos;
-    tarea.esObligatoria = obligatoria;
-    tarea.iconoCodePoint = icon.codePoint;
-    tarea.bloque = bloque;
-    await tarea.save();
     notifyListeners();
   }
 
@@ -125,18 +150,27 @@ class TareaProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void cambiarEstadoTarea(Tarea tarea, bool completada) {
-    if (!esBloqueActivo(tarea.bloque)) return;
-    tarea.estaCompletada = completada;
-    tarea.save();
-    notifyListeners();
+  // --- FLUJO DE VALIDACIÓN ---
+  void solicitarRevision(Tarea tarea) {
+    if (tarea.estado == 'pendiente') {
+      tarea.estado = 'revision';
+      tarea.save();
+      notifyListeners();
+    }
   }
 
-  void resetearDia() {
-    for (var tarea in listaTareas) {
-      tarea.estaCompletada = false;
+  void aprobarTarea(Tarea tarea) {
+    if (tarea.estado == 'revision') {
+      tarea.estado = 'aprobada';
+      tarea.ultimoDiaCompletado = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
       tarea.save();
+      notifyListeners();
     }
+  }
+
+  void rechazarTarea(Tarea tarea) {
+    tarea.estado = 'pendiente';
+    tarea.save();
     notifyListeners();
   }
 }
