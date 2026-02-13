@@ -129,7 +129,7 @@ class _PantallaSetupState extends State<PantallaSetup> {
   }
 }
 
-// --- PANTALLA SELECCIÓN ROL (Animada) ---
+// --- PANTALLA SELECCIÓN ROL ---
 class PantallaSeleccionRol extends StatelessWidget {
   const PantallaSeleccionRol({super.key});
 
@@ -267,7 +267,13 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
     final dineroActual = proveedor.totalDinero;
     final meta = proveedor.metaAhorro;
-    double porcentaje = (meta > 0) ? (dineroActual / meta).clamp(0.0, 1.0) : 0.0;
+
+    // Cálculo de porcentaje que soporte valores negativos
+    double porcentaje = 0.0;
+    if (meta > 0 && dineroActual > 0) {
+      porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
+    }
+
     String bloqueActual = proveedor.bloqueActual;
 
     return Scaffold(
@@ -277,6 +283,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           SafeArea(
             child: Column(
               children: [
+                // HEADER
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                   decoration: const BoxDecoration(
@@ -290,7 +297,13 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         children: [
                           IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white70), onPressed: () => Navigator.pop(context)),
                           Text("Misiones de ${proveedor.nombreHijo} 🚀", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          const SizedBox(width: 40),
+                          IconButton(
+                            icon: const Icon(Icons.history, color: Colors.white, size: 28),
+                            tooltip: "Ver Logros",
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaHistorial()));
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -304,7 +317,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("\$ $dineroActual", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 28)),
+                          Text("\$ $dineroActual", style: TextStyle(color: dineroActual < 0 ? Colors.redAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 28)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
@@ -317,7 +330,19 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                 ),
 
                 Expanded(
-                  child: ListView(
+                  child: proveedor.listaTareasActivas.isEmpty
+                      ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+                        SizedBox(height: 20),
+                        Text("¡Todo listo por ahora! 🎉", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                        Text("Revisa tus logros en el historial", style: TextStyle(fontSize: 14, color: Colors.grey)),
+                      ],
+                    ),
+                  )
+                      : ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       FadeInUp(delay: const Duration(milliseconds: 200), child: _crearSeccion("🌞 Mañana", Colors.orange, proveedor.tareasManana, proveedor, bloqueActual == 'manana')),
@@ -373,10 +398,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             colorCard = Colors.orange[50]!;
             iconStatus = Icons.hourglass_top;
             colorStatus = Colors.orange;
-          } else if (tarea.estaAprobada) {
-            colorCard = Colors.green[50]!;
-            iconStatus = Icons.check_circle;
-            colorStatus = Colors.green;
           }
 
           bool interactuable = tarea.estaPendiente && esBloqueActivo;
@@ -413,7 +434,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                     ),
                     child: Icon(tarea.icono, color: interactuable ? colorBase : Colors.grey, size: 28),
                   ),
-                  title: Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tarea.estaAprobada ? Colors.grey : Colors.black87)),
+                  title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                   subtitle: Text(
                       tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}",
                       style: TextStyle(color: tarea.esObligatoria ? Colors.red : Colors.green[700], fontWeight: FontWeight.w600)
@@ -437,6 +458,66 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   }
 }
 
+// --- PANTALLA HISTORIAL (ADAPTADA PARA SANCIONES) ---
+class PantallaHistorial extends StatelessWidget {
+  const PantallaHistorial({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final proveedor = Provider.of<TareaProvider>(context);
+    final historial = proveedor.listaHistorialHoy;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Logros de Hoy 🏆"),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+      ),
+      body: historial.isEmpty
+          ? const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history_toggle_off, size: 80, color: Colors.grey),
+            SizedBox(height: 20),
+            Text("Aún no hay actividad hoy", style: TextStyle(color: Colors.grey, fontSize: 18)),
+          ],
+        ),
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: historial.length,
+        itemBuilder: (ctx, i) {
+          final tarea = historial[i];
+          final esSancion = tarea.puntos < 0; // Detectamos si es sanción
+
+          return Card(
+            color: esSancion ? Colors.red[50] : Colors.green[50], // Rojo para deudas
+            margin: const EdgeInsets.only(bottom: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(
+                    esSancion ? Icons.warning_amber_rounded : Icons.check_circle,
+                    color: esSancion ? Colors.red : Colors.green,
+                    size: 30
+                ),
+              ),
+              title: Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: esSancion ? Colors.red : Colors.green)),
+              subtitle: Text(
+                esSancion ? "Penalización: -\$${tarea.puntos.abs()}" : "Ganaste \$${tarea.puntos}",
+                style: TextStyle(fontWeight: FontWeight.w600, color: esSancion ? Colors.red[700] : Colors.green[700]),
+              ),
+              trailing: Text(esSancion ? "Sanción" : tarea.bloque.toUpperCase(), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 // --- PANTALLA ADMIN (PADRE) ---
 class PantallaAdmin extends StatelessWidget {
   const PantallaAdmin({super.key});
@@ -448,7 +529,8 @@ class PantallaAdmin extends StatelessWidget {
     // Cálculos para la gráfica de progreso
     final double dineroActual = proveedor.totalDinero.toDouble();
     final double meta = proveedor.metaAhorro;
-    final double porcentaje = (meta > 0) ? (dineroActual / meta).clamp(0.0, 1.0) : 0.0;
+    double porcentaje = 0.0;
+    if (meta > 0 && dineroActual > 0) porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Panel de Control 🛠️"), backgroundColor: Colors.grey[800], foregroundColor: Colors.white),
@@ -515,7 +597,7 @@ class PantallaAdmin extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("\$ ${dineroActual.toInt()}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                        Text("\$ ${dineroActual.toInt()}", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: dineroActual < 0 ? Colors.red : Colors.indigo)),
                         Text("Meta: \$ ${meta.toInt()}", style: const TextStyle(fontSize: 16, color: Colors.grey)),
                       ],
                     ),
@@ -524,8 +606,18 @@ class PantallaAdmin extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(value: porcentaje, minHeight: 15, backgroundColor: Colors.grey[200], color: Colors.green),
                     ),
-                    const SizedBox(height: 5),
-                    Text("${(porcentaje * 100).toStringAsFixed(1)}% completado", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 10),
+
+                    // --- BOTÓN DE SANCIÓN (NUEVO) ---
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                        label: const Text("Aplicar Sanción / Multa", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                        onPressed: () => _mostrarDialogoSancion(context, proveedor),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -557,13 +649,14 @@ class PantallaAdmin extends StatelessWidget {
                 infoFrecuencia = "Semana: $diasTexto";
               }
 
+              final hoyId = int.parse(DateFormat('yyyyMMdd').format(DateTime.now()));
+              bool yaAprobadaHoy = tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == hoyId;
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: ListTile(
                   leading: CircleAvatar(backgroundColor: Colors.indigo.withOpacity(0.1), child: Icon(tarea.icono, color: Colors.indigo, size: 20)),
                   title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600)),
-
-                  // --- MODIFICACIÓN: AÑADIDO VALOR A LA VISTA ---
                   subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -572,10 +665,16 @@ class PantallaAdmin extends StatelessWidget {
                         if(tarea.esObligatoria) const Text("🔑 Obligatoria", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold))
                       ]
                   ),
-
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (!yaAprobadaHoy)
+                        IconButton(
+                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                          tooltip: "Aprobar Manualmente (Hoy)",
+                          onPressed: () => _confirmarAprobacionManual(context, proveedor, tarea),
+                        ),
+
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: () => _mostrarFormularioTarea(context, tarea),
@@ -596,7 +695,67 @@ class PantallaAdmin extends StatelessWidget {
     );
   }
 
-  // --- HELPERS (DIÁLOGOS) ---
+  // --- NUEVO DIÁLOGO DE SANCIÓN ---
+  void _mostrarDialogoSancion(BuildContext context, TareaProvider proveedor) {
+    final motivoCtrl = TextEditingController();
+    final montoCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("⚠️ Aplicar Sanción"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Esta acción restará dinero de la cuenta del niño y quedará registrada."),
+            const SizedBox(height: 15),
+            TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: "Motivo (Ej: Perdió útiles)", icon: Icon(Icons.edit_note))),
+            const SizedBox(height: 10),
+            TextField(controller: montoCtrl, decoration: const InputDecoration(labelText: "Monto Multa", icon: Icon(Icons.money_off)), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () {
+              if (motivoCtrl.text.isNotEmpty && montoCtrl.text.isNotEmpty) {
+                int monto = int.tryParse(montoCtrl.text) ?? 0;
+                proveedor.aplicarSancion(motivoCtrl.text, monto);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanción aplicada correctamente.")));
+              }
+            },
+            child: const Text("Aplicar Multa"),
+          )
+        ],
+      ),
+    );
+  }
+
+  // --- OTROS DIÁLOGOS ---
+  void _confirmarAprobacionManual(BuildContext context, TareaProvider proveedor, Tarea tarea) {
+    showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+            title: const Text("Validar Manualmente"),
+            content: Text("¿Quieres marcar '${tarea.nombre}' como realizada HOY?\n\nSe sumarán los puntos y aparecerá en el historial de ${proveedor.nombreHijo}."),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  onPressed: () {
+                    proveedor.aprobarTareaManual(tarea);
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Tarea aprobada manualmente!")));
+                  },
+                  child: const Text("Sí, Aprobar")
+              )
+            ]
+        )
+    );
+  }
+
   void _editarNombreHijo(BuildContext context, TareaProvider proveedor) {
     final controller = TextEditingController(text: proveedor.nombreHijo);
     showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Nombre del Hijo/a"), content: TextField(controller: controller, textCapitalization: TextCapitalization.words), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")), ElevatedButton(onPressed: () { if(controller.text.isNotEmpty) { proveedor.actualizarConfiguracionHijo(controller.text); Navigator.pop(ctx); } }, child: const Text("Guardar"))]));
@@ -616,7 +775,7 @@ class PantallaAdmin extends StatelessWidget {
   }
 }
 
-// --- FORMULARIO TAREA (ACTUALIZADO PARA EDITAR) ---
+// --- FORMULARIO TAREA (Igual que V2.4) ---
 class FormularioTarea extends StatefulWidget {
   final Tarea? tarea;
   const FormularioTarea({super.key, this.tarea});
