@@ -13,29 +13,22 @@ class TareaProvider extends ChangeNotifier {
     return (now.year * 10000) + (now.month * 100) + now.day;
   }
 
-  // --- GETTERS ---
+  // --- GETTERS PRINCIPALES ---
 
-  // 1. LISTA DE TRABAJO (Pendientes y En Revisión)
   List<Tarea> get listaTareasActivas {
     if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
 
     final tareasDeHoy = _filtrarTareasPorFecha(DateTime.now());
 
-    // Solo devolvemos las que NO están aprobadas (o sea, pendientes/revisión)
     return tareasDeHoy.where((t) {
-      // Excluimos sanciones del tablero de trabajo (bloque 'sancion')
       if (t.bloque == 'sancion') return false;
-
       bool completadaHoy = (t.estado == 'aprobada' && t.ultimoDiaCompletado == _fechaIdHoy);
       return !completadaHoy;
     }).toList();
   }
 
-  // 2. LISTA DE HISTORIAL (Logros y Sanciones de HOY)
   List<Tarea> get listaHistorialHoy {
     if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
-
-    // Aquí filtramos manualmente para incluir sanciones (que son fecha_fija) y tareas de hoy
     return _cajaTareas!.values.where((t) {
       bool esDeHoy = t.ultimoDiaCompletado == _fechaIdHoy;
       bool estaAprobada = t.estado == 'aprobada';
@@ -43,10 +36,8 @@ class TareaProvider extends ChangeNotifier {
     }).toList();
   }
 
-  // 3. INVENTARIO TOTAL (Para el Admin)
   List<Tarea> get listaTodasLasTareas {
     if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
-    // Excluimos las sanciones del inventario para no ensuciar la lista de gestión
     return _cajaTareas!.values.where((t) => t.bloque != 'sancion').toList();
   }
 
@@ -73,11 +64,19 @@ class TareaProvider extends ChangeNotifier {
   List<Tarea> get tareasTarde => listaTareasActivas.where((t) => t.bloque == 'tarde').toList();
   List<Tarea> get tareasNoche => listaTareasActivas.where((t) => t.bloque == 'noche').toList();
 
-  // Configuración
+  // --- CONFIGURACIÓN Y METAS ---
+
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
   String get pinPadre => _cajaConfig?.get('pin_padre', defaultValue: '') ?? '';
   String get nombreHijo => _cajaConfig?.get('nombre_hijo', defaultValue: 'Hijo') ?? 'Hijo';
-  double get metaAhorro => _cajaConfig?.get('meta', defaultValue: 2000000.0) ?? 2000000.0;
+
+  double get metaAhorro => _cajaConfig?.get('meta', defaultValue: 0.0) ?? 0.0;
+  String get nombreMeta => _cajaConfig?.get('nombre_meta', defaultValue: '') ?? '';
+
+  List<Map<dynamic, dynamic>> get historialVictorias {
+    final lista = _cajaConfig?.get('historial_victorias', defaultValue: []) ?? [];
+    return List<Map<dynamic, dynamic>>.from(lista);
+  }
 
   String get bloqueActual {
     final hora = DateTime.now().hour;
@@ -96,23 +95,49 @@ class TareaProvider extends ChangeNotifier {
 
   Future<void> _agregarDinero(int cantidad) async {
     int saldoActual = totalDinero;
-    // Permitimos saldo negativo (Deuda Real)
     await _cajaConfig!.put('saldo_billetera', saldoActual + cantidad);
     notifyListeners();
   }
 
-  // --- INICIALIZACIÓN ---
+  // --- INICIALIZACIÓN (CON MIGRACIONES) ---
   Future<void> inicializar() async {
     _cajaTareas = await Hive.openBox<Tarea>('caja_tareas_v5');
     _cajaConfig = await Hive.openBox('caja_config');
 
+    // Migración V2.5: Billetera Persistente
     if (!_cajaConfig!.containsKey('saldo_billetera')) {
       int saldoCalculado = 0;
       for (var tarea in _cajaTareas!.values) {
-        // Solo sumamos tareas normales, no sanciones antiguas si las hubiera
         if (tarea.estado == 'aprobada' && tarea.puntos > 0) saldoCalculado += tarea.puntos;
       }
       await _cajaConfig!.put('saldo_billetera', saldoCalculado);
+    }
+
+    // MIGRACIÓN V3.1: Corregir nombres vacíos en el historial (Caso Expansion Pack)
+    // Obtenemos la lista tal cual está guardada
+    var rawHistorial = _cajaConfig!.get('historial_victorias', defaultValue: []);
+
+    if (rawHistorial is List && rawHistorial.isNotEmpty) {
+      List<Map<dynamic, dynamic>> historialModificable = [];
+      bool cambiosNecesarios = false;
+
+      for (var entry in rawHistorial) {
+        // Clonamos el mapa para asegurarnos de que sea modificable
+        Map<dynamic, dynamic> mapaEntry = Map<dynamic, dynamic>.from(entry as Map);
+
+        // Verificamos si falta el nombre
+        if (mapaEntry['nombre'] == null || mapaEntry['nombre'].toString().trim().isEmpty) {
+          mapaEntry['nombre'] = "Expansion Pack Nintendo"; // ¡Aquí está la corrección!
+          cambiosNecesarios = true;
+        }
+        historialModificable.add(mapaEntry);
+      }
+
+      // Si encontramos algo que corregir, guardamos la lista actualizada
+      if (cambiosNecesarios) {
+        await _cajaConfig!.put('historial_victorias', historialModificable);
+        debugPrint("Migración completada: Se asignó nombre al trofeo histórico.");
+      }
     }
 
     _verificarNuevoDia();
@@ -132,27 +157,56 @@ class TareaProvider extends ChangeNotifier {
     }
   }
 
-  // --- GESTIÓN DE TAREAS Y SANCIONES ---
+  // --- LÓGICA V3.0: CICLO DE METAS ---
 
-  // NUEVO: SISTEMA DE PENALIZACIONES
+  Future<void> definirNuevaMeta(String nombre, double monto) async {
+    await _cajaConfig!.put('nombre_meta', nombre);
+    await _cajaConfig!.put('meta', monto);
+    notifyListeners();
+  }
+
+  Future<void> reclamarPremio() async {
+    final costoMeta = metaAhorro.toInt();
+    final nombrePremio = nombreMeta;
+
+    if (totalDinero >= costoMeta && costoMeta > 0) {
+      // A. Pago
+      await _agregarDinero(-costoMeta);
+
+      // B. Historial
+      final nuevaVictoria = {
+        'nombre': nombrePremio,
+        'fecha': DateTime.now().toIso8601String(),
+        'costo': costoMeta,
+      };
+
+      final historial = historialVictorias;
+      historial.add(nuevaVictoria);
+      await _cajaConfig!.put('historial_victorias', historial);
+
+      // C. Reset Meta
+      await _cajaConfig!.put('meta', 0.0);
+      await _cajaConfig!.put('nombre_meta', '');
+
+      notifyListeners();
+    }
+  }
+
+  // --- GESTIÓN DE TAREAS ---
+
   Future<void> aplicarSancion(String motivo, int monto) async {
-    // 1. Restamos el dinero (puede quedar negativo)
     await _agregarDinero(-monto);
-
-    // 2. Creamos un registro en el historial para que el niño lo vea
-    // Usamos una Tarea "falsa" para aprovechar el sistema existente
     final sancion = Tarea(
       nombre: "Sanción: $motivo",
-      puntos: -monto, // Puntos negativos
+      puntos: -monto,
       esObligatoria: false,
-      iconoCodePoint: Icons.warning_amber_rounded.codePoint, // Icono de alerta
-      bloque: 'sancion', // Bloque especial para ocultarlo del tablero
-      estado: 'aprobada', // Para que salga en historial
+      iconoCodePoint: Icons.warning_amber_rounded.codePoint,
+      bloque: 'sancion',
+      estado: 'aprobada',
       tipoRecurrencia: 'fecha_fija',
       fechaEspecifica: DateTime.now(),
       ultimoDiaCompletado: _fechaIdHoy,
     );
-
     await _cajaTareas!.add(sancion);
     notifyListeners();
   }
@@ -221,11 +275,6 @@ class TareaProvider extends ChangeNotifier {
 
   Future<void> actualizarConfiguracionHijo(String nuevoNombre) async {
     await _cajaConfig!.put('nombre_hijo', nuevoNombre);
-    notifyListeners();
-  }
-
-  Future<void> actualizarMeta(double nuevaMeta) async {
-    await _cajaConfig!.put('meta', nuevaMeta);
     notifyListeners();
   }
 

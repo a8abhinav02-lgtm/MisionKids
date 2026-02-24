@@ -51,22 +51,15 @@ class ControladorInicio extends StatelessWidget {
   Widget build(BuildContext context) {
     final proveedor = Provider.of<TareaProvider>(context);
 
-    if (proveedor.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (!proveedor.existeAdmin) {
-      return const PantallaSetup();
-    } else {
-      return const PantallaSeleccionRol();
-    }
+    if (proveedor.isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!proveedor.existeAdmin) return const PantallaSetup();
+    return const PantallaSeleccionRol();
   }
 }
 
 // --- PANTALLA SETUP ---
 class PantallaSetup extends StatefulWidget {
   const PantallaSetup({super.key});
-
   @override
   State<PantallaSetup> createState() => _PantallaSetupState();
 }
@@ -86,7 +79,6 @@ class _PantallaSetupState extends State<PantallaSetup> {
           child: Center(
             child: SingleChildScrollView(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.security, size: 80, color: Colors.amber),
                   const SizedBox(height: 20),
@@ -132,47 +124,23 @@ class _PantallaSetupState extends State<PantallaSetup> {
 // --- PANTALLA SELECCIÓN ROL ---
 class PantallaSeleccionRol extends StatelessWidget {
   const PantallaSeleccionRol({super.key});
-
   @override
   Widget build(BuildContext context) {
     final proveedor = Provider.of<TareaProvider>(context);
-
     return Scaffold(
       backgroundColor: Colors.indigo,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 FadeInDown(duration: const Duration(seconds: 1), child: const Icon(Icons.rocket_launch, size: 80, color: Colors.amber)),
                 const SizedBox(height: 20),
                 FadeInDown(delay: const Duration(milliseconds: 200), child: const Text("Misión: Switch 2", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white))),
                 const SizedBox(height: 50),
-
-                FadeInLeft(
-                  delay: const Duration(milliseconds: 400),
-                  child: _BotonRol(
-                    titulo: "Soy ${proveedor.nombreHijo}",
-                    subtitulo: "¡A ganar puntos!",
-                    icono: Icons.gamepad,
-                    colorFondo: Colors.white,
-                    colorTexto: Colors.indigo,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaPrincipal())),
-                  ),
-                ),
+                FadeInLeft(delay: const Duration(milliseconds: 400), child: _BotonRol(titulo: "Soy ${proveedor.nombreHijo}", subtitulo: "¡A ganar puntos!", icono: Icons.gamepad, colorFondo: Colors.white, colorTexto: Colors.indigo, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaPrincipal())))),
                 const SizedBox(height: 20),
-                FadeInRight(
-                  delay: const Duration(milliseconds: 600),
-                  child: _BotonRol(
-                    titulo: "Soy Papá / Mamá",
-                    subtitulo: "Zona de Control",
-                    icono: Icons.admin_panel_settings,
-                    colorFondo: Colors.indigo[700]!,
-                    colorTexto: Colors.white,
-                    onTap: () => _mostrarLoginPadre(context, proveedor),
-                  ),
-                ),
+                FadeInRight(delay: const Duration(milliseconds: 600), child: _BotonRol(titulo: "Soy Papá / Mamá", subtitulo: "Zona de Control", icono: Icons.admin_panel_settings, colorFondo: Colors.indigo[700]!, colorTexto: Colors.white, onTap: () => _mostrarLoginPadre(context, proveedor))),
               ],
             ),
           ),
@@ -183,27 +151,7 @@ class PantallaSeleccionRol extends StatelessWidget {
 
   void _mostrarLoginPadre(BuildContext context, TareaProvider proveedor) {
     final TextEditingController pinController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Zona de Padres 🔒"),
-        content: TextField(controller: pinController, keyboardType: TextInputType.number, obscureText: true, autofocus: true, decoration: const InputDecoration(labelText: "PIN", prefixIcon: Icon(Icons.lock))),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
-          ElevatedButton(
-            onPressed: () {
-              if (pinController.text == proveedor.pinPadre) {
-                Navigator.pop(ctx);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaAdmin()));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("PIN Incorrecto ⛔"), backgroundColor: Colors.red));
-              }
-            },
-            child: const Text("Entrar"),
-          )
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Zona de Padres 🔒"), content: TextField(controller: pinController, keyboardType: TextInputType.number, obscureText: true, autofocus: true, decoration: const InputDecoration(labelText: "PIN", prefixIcon: Icon(Icons.lock))), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")), ElevatedButton(onPressed: () { if (pinController.text == proveedor.pinPadre) { Navigator.pop(ctx); Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaAdmin())); } else { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("PIN Incorrecto ⛔"), backgroundColor: Colors.red)); } }, child: const Text("Entrar"))]));
   }
 }
 
@@ -212,34 +160,16 @@ class _BotonRol extends StatelessWidget {
   final IconData icono;
   final Color colorFondo, colorTexto;
   final VoidCallback onTap;
-
   const _BotonRol({required this.titulo, required this.subtitulo, required this.icono, required this.colorFondo, required this.colorTexto, required this.onTap});
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        constraints: const BoxConstraints(maxWidth: 400),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: colorFondo, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 5))]),
-        child: Row(
-          children: [
-            Icon(icono, size: 40, color: colorTexto),
-            const SizedBox(width: 20),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(titulo, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorTexto)), Text(subtitulo, style: TextStyle(fontSize: 14, color: colorTexto.withOpacity(0.7)))])),
-          ],
-        ),
-      ),
-    );
+    return GestureDetector(onTap: onTap, child: Container(width: MediaQuery.of(context).size.width * 0.85, constraints: const BoxConstraints(maxWidth: 400), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: colorFondo, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 5))]), child: Row(children: [Icon(icono, size: 40, color: colorTexto), const SizedBox(width: 20), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(titulo, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorTexto)), Text(subtitulo, style: TextStyle(fontSize: 14, color: colorTexto.withOpacity(0.7)))]))])));
   }
 }
 
 // --- PANTALLA PRINCIPAL (HIJO) ---
 class PantallaPrincipal extends StatefulWidget {
   const PantallaPrincipal({super.key});
-
   @override
   State<PantallaPrincipal> createState() => _PantallaPrincipalState();
 }
@@ -250,7 +180,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
   }
 
   @override
@@ -263,16 +193,16 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   Widget build(BuildContext context) {
     final proveedor = Provider.of<TareaProvider>(context);
 
-    if (proveedor.isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-
     final dineroActual = proveedor.totalDinero;
     final meta = proveedor.metaAhorro;
+    final nombreMeta = proveedor.nombreMeta;
 
-    // Cálculo de porcentaje que soporte valores negativos
+    // Lógica de estados del reto
+    bool hayMetaDefinida = meta > 0;
+    bool metaCumplida = hayMetaDefinida && dineroActual >= meta;
+
     double porcentaje = 0.0;
-    if (meta > 0 && dineroActual > 0) {
-      porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
-    }
+    if (hayMetaDefinida && dineroActual > 0) porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
 
     String bloqueActual = proveedor.bloqueActual;
 
@@ -283,7 +213,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           SafeArea(
             child: Column(
               children: [
-                // HEADER
+                // HEADER DINÁMICO
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                   decoration: const BoxDecoration(
@@ -298,8 +228,8 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                           IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white70), onPressed: () => Navigator.pop(context)),
                           Text("Misiones de ${proveedor.nombreHijo} 🚀", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           IconButton(
-                            icon: const Icon(Icons.history, color: Colors.white, size: 28),
-                            tooltip: "Ver Logros",
+                            icon: const Icon(Icons.emoji_events, color: Colors.amber, size: 30),
+                            tooltip: "Salón de la Fama",
                             onPressed: () {
                               Navigator.push(context, MaterialPageRoute(builder: (_) => const PantallaHistorial()));
                             },
@@ -307,22 +237,61 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Text("Meta: \$${meta.toInt()}", style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(value: porcentaje, minHeight: 20, backgroundColor: Colors.black26, color: Colors.amber),
-                      ),
+
+                      // ZONA DE PROGRESO / META
+                      if (!hayMetaDefinida) ...[
+                        // ESTADO: ESPERANDO MISIÓN
+                        const Card(
+                          color: Colors.white24,
+                          child: Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.hourglass_empty, color: Colors.white),
+                                SizedBox(width: 10),
+                                Text("¡Pide a Papá una nueva misión!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        )
+                      ] else if (metaCumplida) ...[
+                        // ESTADO: META CUMPLIDA (BOTÓN DE CANJE)
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber,
+                              foregroundColor: Colors.indigo,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+                          ),
+                          icon: const Icon(Icons.check_circle, size: 30),
+                          label: Text("¡RECLAMAR ${nombreMeta.toUpperCase()}!", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          onPressed: () {
+                            _confettiController.play();
+                            _mostrarDialogoReclamar(context, proveedor);
+                          },
+                        )
+                      ] else ...[
+                        // ESTADO: EN PROGRESO
+                        Text("Meta: $nombreMeta (\$${meta.toInt()})", style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(value: porcentaje, minHeight: 20, backgroundColor: Colors.black26, color: Colors.amber),
+                        ),
+                      ],
+
                       const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("\$ $dineroActual", style: TextStyle(color: dineroActual < 0 ? Colors.redAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 28)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
-                            child: Text("${(porcentaje * 100).toStringAsFixed(1)} %", style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 20)),
-                          ),
+                          if(hayMetaDefinida && !metaCumplida)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
+                              child: Text("${(porcentaje * 100).toStringAsFixed(1)} %", style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 20)),
+                            ),
                         ],
                       ),
                     ],
@@ -338,7 +307,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
                         SizedBox(height: 20),
                         Text("¡Todo listo por ahora! 🎉", style: TextStyle(fontSize: 18, color: Colors.grey)),
-                        Text("Revisa tus logros en el historial", style: TextStyle(fontSize: 14, color: Colors.grey)),
                       ],
                     ),
                   )
@@ -364,10 +332,43 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             shouldLoop: false,
             colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
             gravity: 0.3,
-            numberOfParticles: 20,
+            numberOfParticles: 50,
           ),
         ],
       ),
+    );
+  }
+
+  void _mostrarDialogoReclamar(BuildContext context, TareaProvider proveedor) {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text("🎉 ¡FELICIDADES! 🎉", textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.card_giftcard, size: 60, color: Colors.indigo),
+              const SizedBox(height: 20),
+              Text("Has conseguido: ${proveedor.nombreMeta}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 10),
+              Text("Costo: \$${proveedor.metaAhorro.toInt()}"),
+              const SizedBox(height: 20),
+              const Text("Se descontará de tus ahorros y podrás empezar una nueva misión.", textAlign: TextAlign.center),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+              onPressed: () {
+                proveedor.reclamarPremio();
+                Navigator.pop(ctx); // Cierra diálogo
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Premio reclamado! Disfrútalo.")));
+              },
+              child: const Text("¡CANJEAR AHORA!"),
+            )
+          ],
+        )
     );
   }
 
@@ -379,146 +380,98 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 10),
-          child: Row(
-            children: [
-              Text(titulo, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorTexto)),
-              if (esBloqueActivo) Pulse(infinite: true, child: const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.star, color: Colors.amber, size: 20))),
-              if (!esBloqueActivo) const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.lock_clock, color: Colors.grey, size: 18))
-            ],
-          ),
-        ),
+        Padding(padding: const EdgeInsets.only(left: 8, bottom: 10), child: Row(children: [Text(titulo, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorTexto)), if (esBloqueActivo) Pulse(infinite: true, child: const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.star, color: Colors.amber, size: 20))), if (!esBloqueActivo) const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.lock_clock, color: Colors.grey, size: 18))])),
         ...tareas.map((tarea) {
           Color colorCard = Colors.white;
           IconData iconStatus = Icons.check_box_outline_blank;
           Color colorStatus = Colors.grey;
-
-          if (tarea.estaEnRevision) {
-            colorCard = Colors.orange[50]!;
-            iconStatus = Icons.hourglass_top;
-            colorStatus = Colors.orange;
-          }
-
+          if (tarea.estaEnRevision) { colorCard = Colors.orange[50]!; iconStatus = Icons.hourglass_top; colorStatus = Colors.orange; }
           bool interactuable = tarea.estaPendiente && esBloqueActivo;
-
-          return Opacity(
-            opacity: opacidad,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    if (interactuable) BoxShadow(color: colorBase.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
-                  ]
-              ),
-              child: Card(
-                elevation: 0,
-                margin: EdgeInsets.zero,
-                color: colorCard,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  side: tarea.esObligatoria ? BorderSide(color: Colors.red.shade300, width: 1.5) : BorderSide.none,
-                ),
-                child: ListTile(
-                  enabled: interactuable,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: interactuable ? [colorBase.withOpacity(0.2), colorBase.withOpacity(0.05)] : [Colors.grey.shade200, Colors.grey.shade300],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(tarea.icono, color: interactuable ? colorBase : Colors.grey, size: 28),
-                  ),
-                  title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                  subtitle: Text(
-                      tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}",
-                      style: TextStyle(color: tarea.esObligatoria ? Colors.red : Colors.green[700], fontWeight: FontWeight.w600)
-                  ),
-                  trailing: interactuable
-                      ? IconButton(
-                    icon: const Icon(Icons.check_box_outline_blank, size: 34, color: Colors.grey),
-                    onPressed: () {
-                      _confettiController.play();
-                      proveedor.solicitarRevision(tarea);
-                    },
-                  )
-                      : Icon(iconStatus, color: colorStatus, size: 34),
-                ),
-              ),
-            ),
-          );
+          return Opacity(opacity: opacidad, child: Container(margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), boxShadow: [if (interactuable) BoxShadow(color: colorBase.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]), child: Card(elevation: 0, margin: EdgeInsets.zero, color: colorCard, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: tarea.esObligatoria ? BorderSide(color: Colors.red.shade300, width: 1.5) : BorderSide.none), child: ListTile(enabled: interactuable, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(gradient: LinearGradient(colors: interactuable ? [colorBase.withOpacity(0.2), colorBase.withOpacity(0.05)] : [Colors.grey.shade200, Colors.grey.shade300], begin: Alignment.topLeft, end: Alignment.bottomRight), shape: BoxShape.circle), child: Icon(tarea.icono, color: interactuable ? colorBase : Colors.grey, size: 28)), title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)), subtitle: Text(tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}", style: TextStyle(color: tarea.esObligatoria ? Colors.red : Colors.green[700], fontWeight: FontWeight.w600)), trailing: interactuable ? IconButton(icon: const Icon(Icons.check_box_outline_blank, size: 34, color: Colors.grey), onPressed: () { _confettiController.play(); proveedor.solicitarRevision(tarea); }) : Icon(iconStatus, color: colorStatus, size: 34)))));
         }),
       ],
     );
   }
 }
 
-// --- PANTALLA HISTORIAL (ADAPTADA PARA SANCIONES) ---
+// --- PANTALLA HISTORIAL (CON VICTORIAS) ---
 class PantallaHistorial extends StatelessWidget {
   const PantallaHistorial({super.key});
 
   @override
   Widget build(BuildContext context) {
     final proveedor = Provider.of<TareaProvider>(context);
-    final historial = proveedor.listaHistorialHoy;
+    final historialDia = proveedor.listaHistorialHoy;
+    final historialVictorias = proveedor.historialVictorias; // Lista de premios ganados
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Logros de Hoy 🏆"),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
-      body: historial.isEmpty
-          ? const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Salón de la Fama 🏆"),
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          bottom: const TabBar(
+            labelColor: Colors.amber,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.amber,
+            tabs: [
+              Tab(icon: Icon(Icons.today), text: "Hoy"),
+              Tab(icon: Icon(Icons.emoji_events), text: "Trofeos"),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            Icon(Icons.history_toggle_off, size: 80, color: Colors.grey),
-            SizedBox(height: 20),
-            Text("Aún no hay actividad hoy", style: TextStyle(color: Colors.grey, fontSize: 18)),
+            // TAB 1: LOGROS DE HOY
+            historialDia.isEmpty
+                ? const Center(child: Text("Aún no hay actividad hoy", style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: historialDia.length,
+              itemBuilder: (ctx, i) {
+                final tarea = historialDia[i];
+                final esSancion = tarea.puntos < 0;
+                return Card(
+                    color: esSancion ? Colors.red[50] : Colors.green[50],
+                    child: ListTile(
+                      leading: Icon(esSancion ? Icons.warning : Icons.check_circle, color: esSancion ? Colors.red : Colors.green),
+                      title: Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: esSancion ? Colors.red : Colors.green)),
+                      subtitle: Text(esSancion ? "Sanción: ${tarea.puntos}" : "Ganaste \$${tarea.puntos}"),
+                    )
+                );
+              },
+            ),
+
+            // TAB 2: VICTORIAS PASADAS
+            historialVictorias.isEmpty
+                ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.emoji_events_outlined, size: 60, color: Colors.grey), SizedBox(height: 10), Text("¡Completa tu primera meta!", style: TextStyle(color: Colors.grey))]))
+                : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: historialVictorias.length,
+              itemBuilder: (ctx, i) {
+                // Invertimos la lista para ver lo más reciente primero
+                final victoria = historialVictorias[historialVictorias.length - 1 - i];
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  child: ListTile(
+                    leading: const CircleAvatar(backgroundColor: Colors.amber, child: Icon(Icons.star, color: Colors.white)),
+                    title: Text(victoria['nombre'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    subtitle: Text("Completado: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(victoria['fecha']))}"),
+                    trailing: Text("\$${victoria['costo']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+                  ),
+                );
+              },
+            ),
           ],
         ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: historial.length,
-        itemBuilder: (ctx, i) {
-          final tarea = historial[i];
-          final esSancion = tarea.puntos < 0; // Detectamos si es sanción
-
-          return Card(
-            color: esSancion ? Colors.red[50] : Colors.green[50], // Rojo para deudas
-            margin: const EdgeInsets.only(bottom: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(
-                    esSancion ? Icons.warning_amber_rounded : Icons.check_circle,
-                    color: esSancion ? Colors.red : Colors.green,
-                    size: 30
-                ),
-              ),
-              title: Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: esSancion ? Colors.red : Colors.green)),
-              subtitle: Text(
-                esSancion ? "Penalización: -\$${tarea.puntos.abs()}" : "Ganaste \$${tarea.puntos}",
-                style: TextStyle(fontWeight: FontWeight.w600, color: esSancion ? Colors.red[700] : Colors.green[700]),
-              ),
-              trailing: Text(esSancion ? "Sanción" : tarea.bloque.toUpperCase(), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ),
-          );
-        },
       ),
     );
   }
 }
 
-// --- PANTALLA ADMIN (PADRE) ---
+// --- PANTALLA ADMIN ---
 class PantallaAdmin extends StatelessWidget {
   const PantallaAdmin({super.key});
 
@@ -526,11 +479,14 @@ class PantallaAdmin extends StatelessWidget {
   Widget build(BuildContext context) {
     final proveedor = Provider.of<TareaProvider>(context);
 
-    // Cálculos para la gráfica de progreso
+    // Datos de Meta
     final double dineroActual = proveedor.totalDinero.toDouble();
     final double meta = proveedor.metaAhorro;
+    final String nombreMeta = proveedor.nombreMeta;
+    final bool hayMeta = meta > 0;
+
     double porcentaje = 0.0;
-    if (meta > 0 && dineroActual > 0) porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
+    if (hayMeta && dineroActual > 0) porcentaje = (dineroActual / meta).clamp(0.0, 1.0);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Panel de Control 🛠️"), backgroundColor: Colors.grey[800], foregroundColor: Colors.white),
@@ -544,7 +500,60 @@ class PantallaAdmin extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 80),
           children: [
-            // NOTIFICACIONES ANIMADAS
+            // SECCIÓN DE META / RETO ACTUAL
+            Card(
+              margin: const EdgeInsets.all(16),
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text("🎯 Reto Actual", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      if (hayMeta) IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _dialogoDefinirMeta(context, proveedor))
+                    ]),
+                    const Divider(),
+                    if (!hayMeta) ...[
+                      const Text("No hay un reto activo. Josué está esperando una misión.", style: TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                          icon: const Icon(Icons.add_task),
+                          label: const Text("DEFINIR NUEVO RETO"),
+                          onPressed: () => _dialogoDefinirMeta(context, proveedor),
+                        ),
+                      )
+                    ] else ...[
+                      Text(nombreMeta, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      const SizedBox(height: 5),
+                      LinearProgressIndicator(value: porcentaje, minHeight: 10, color: Colors.green, backgroundColor: Colors.grey[200]),
+                      const SizedBox(height: 5),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text("\$${dineroActual.toInt()} acumulados"),
+                        Text("Meta: \$${meta.toInt()}"),
+                      ]),
+                    ]
+                  ],
+                ),
+              ),
+            ),
+
+            // BOTÓN DE SANCIÓN
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                label: const Text("Aplicar Sanción / Multa", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                onPressed: () => _mostrarDialogoSancion(context, proveedor),
+              ),
+            ),
+
+            // LISTA DE TAREAS POR REVISAR (Igual que antes)
             if (proveedor.tareasPorRevisar.isNotEmpty)
               FadeInDown(
                 child: Container(
@@ -577,115 +586,25 @@ class PantallaAdmin extends StatelessWidget {
                 ),
               ),
 
-            // DASHBOARD
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Progreso de Ahorro", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.grey), onPressed: () => _editarMeta(context, proveedor)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("\$ ${dineroActual.toInt()}", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: dineroActual < 0 ? Colors.red : Colors.indigo)),
-                        Text("Meta: \$ ${meta.toInt()}", style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(value: porcentaje, minHeight: 15, backgroundColor: Colors.grey[200], color: Colors.green),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // --- BOTÓN DE SANCIÓN (NUEVO) ---
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
-                        label: const Text("Aplicar Sanción / Multa", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
-                        onPressed: () => _mostrarDialogoSancion(context, proveedor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.indigo[50],
-              elevation: 0,
-              child: ListTile(
-                leading: const Icon(Icons.face, color: Colors.indigo),
-                title: Text("Perfil de ${proveedor.nombreHijo}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                trailing: IconButton(icon: const Icon(Icons.edit, color: Colors.indigo), onPressed: () => _editarNombreHijo(context, proveedor)),
-              ),
-            ),
-
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15), child: Text("Inventario Total de Misiones", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.indigo))),
-
-            if (proveedor.listaTodasLasTareas.isEmpty)
-              const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No hay tareas registradas."))),
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15), child: Text("Inventario de Misiones (Reutilizables)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey))),
 
             ...proveedor.listaTodasLasTareas.map((tarea) {
-              String infoFrecuencia = "";
-              if (tarea.tipoRecurrencia == 'diaria') infoFrecuencia = "Todos los días";
-              else if (tarea.tipoRecurrencia == 'fecha_fija') infoFrecuencia = "📅 ${tarea.fechaEspecifica != null ? DateFormat('dd/MM/yyyy').format(tarea.fechaEspecifica!) : '?'}";
-              else if (tarea.tipoRecurrencia == 'semanal') {
-                const diasLetras = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-                final diasTexto = tarea.diasSemana.map((d) => diasLetras[d-1]).join(", ");
-                infoFrecuencia = "Semana: $diasTexto";
-              }
-
               final hoyId = int.parse(DateFormat('yyyyMMdd').format(DateTime.now()));
               bool yaAprobadaHoy = tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == hoyId;
-
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: ListTile(
                   leading: CircleAvatar(backgroundColor: Colors.indigo.withOpacity(0.1), child: Icon(tarea.icono, color: Colors.indigo, size: 20)),
                   title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("${tarea.bloque.toUpperCase()} • $infoFrecuencia", style: const TextStyle(fontSize: 12)),
-                        Text("💰 ${tarea.puntos} Puntos", style: TextStyle(color: Colors.indigo[400], fontWeight: FontWeight.bold, fontSize: 12)),
-                        if(tarea.esObligatoria) const Text("🔑 Obligatoria", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold))
-                      ]
-                  ),
+                  subtitle: Text("${tarea.bloque.toUpperCase()} • 💰 ${tarea.puntos}"),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (!yaAprobadaHoy)
-                        IconButton(
-                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                          tooltip: "Aprobar Manualmente (Hoy)",
-                          onPressed: () => _confirmarAprobacionManual(context, proveedor, tarea),
-                        ),
-
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _mostrarFormularioTarea(context, tarea),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmarBorrar(context, proveedor, tarea),
-                      ),
+                      if (!yaAprobadaHoy) IconButton(icon: const Icon(Icons.check_circle_outline, color: Colors.green), onPressed: () => _confirmarAprobacionManual(context, proveedor, tarea)),
+                      IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _mostrarFormularioTarea(context, tarea)),
+                      IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _confirmarBorrar(context, proveedor, tarea)),
                     ],
                   ),
-                  onTap: () => _mostrarFormularioTarea(context, tarea),
                 ),
               );
             }),
@@ -695,79 +614,46 @@ class PantallaAdmin extends StatelessWidget {
     );
   }
 
-  // --- NUEVO DIÁLOGO DE SANCIÓN ---
+  // --- NUEVO DIÁLOGO PARA DEFINIR META ---
+  void _dialogoDefinirMeta(BuildContext context, TareaProvider proveedor) {
+    final nombreCtrl = TextEditingController(text: proveedor.nombreMeta);
+    final montoCtrl = TextEditingController(text: proveedor.metaAhorro > 0 ? proveedor.metaAhorro.toInt().toString() : '');
+
+    showDialog(context: context, builder: (ctx) => AlertDialog(
+      title: const Text("Definir Nuevo Reto 🎯"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(controller: nombreCtrl, decoration: const InputDecoration(labelText: "Nombre del Premio", hintText: "Ej: Nintendo Switch, Cine...")),
+          const SizedBox(height: 10),
+          TextField(controller: montoCtrl, decoration: const InputDecoration(labelText: "Costo (Puntos)", prefixText: "\$ "), keyboardType: TextInputType.number),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+        ElevatedButton(onPressed: () {
+          if (nombreCtrl.text.isNotEmpty && montoCtrl.text.isNotEmpty) {
+            proveedor.definirNuevaMeta(nombreCtrl.text, double.tryParse(montoCtrl.text) ?? 0);
+            Navigator.pop(ctx);
+          }
+        }, child: const Text("Guardar Meta"))
+      ],
+    ));
+  }
+
   void _mostrarDialogoSancion(BuildContext context, TareaProvider proveedor) {
     final motivoCtrl = TextEditingController();
     final montoCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("⚠️ Aplicar Sanción"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Esta acción restará dinero de la cuenta del niño y quedará registrada."),
-            const SizedBox(height: 15),
-            TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: "Motivo (Ej: Perdió útiles)", icon: Icon(Icons.edit_note))),
-            const SizedBox(height: 10),
-            TextField(controller: montoCtrl, decoration: const InputDecoration(labelText: "Monto Multa", icon: Icon(Icons.money_off)), keyboardType: TextInputType.number),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () {
-              if (motivoCtrl.text.isNotEmpty && montoCtrl.text.isNotEmpty) {
-                int monto = int.tryParse(montoCtrl.text) ?? 0;
-                proveedor.aplicarSancion(motivoCtrl.text, monto);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanción aplicada correctamente.")));
-              }
-            },
-            child: const Text("Aplicar Multa"),
-          )
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("⚠️ Aplicar Sanción"), content: Column(mainAxisSize: MainAxisSize.min, children: [const Text("Esto restará saldo."), TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: "Motivo")), TextField(controller: montoCtrl, decoration: const InputDecoration(labelText: "Monto"), keyboardType: TextInputType.number)]), actions: [ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), onPressed: () { if (motivoCtrl.text.isNotEmpty && montoCtrl.text.isNotEmpty) { proveedor.aplicarSancion(motivoCtrl.text, int.tryParse(montoCtrl.text) ?? 0); Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanción aplicada."))); } }, child: const Text("Aplicar"))]));
   }
 
-  // --- OTROS DIÁLOGOS ---
   void _confirmarAprobacionManual(BuildContext context, TareaProvider proveedor, Tarea tarea) {
-    showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-            title: const Text("Validar Manualmente"),
-            content: Text("¿Quieres marcar '${tarea.nombre}' como realizada HOY?\n\nSe sumarán los puntos y aparecerá en el historial de ${proveedor.nombreHijo}."),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                  onPressed: () {
-                    proveedor.aprobarTareaManual(tarea);
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Tarea aprobada manualmente!")));
-                  },
-                  child: const Text("Sí, Aprobar")
-              )
-            ]
-        )
-    );
-  }
-
-  void _editarNombreHijo(BuildContext context, TareaProvider proveedor) {
-    final controller = TextEditingController(text: proveedor.nombreHijo);
-    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Nombre del Hijo/a"), content: TextField(controller: controller, textCapitalization: TextCapitalization.words), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")), ElevatedButton(onPressed: () { if(controller.text.isNotEmpty) { proveedor.actualizarConfiguracionHijo(controller.text); Navigator.pop(ctx); } }, child: const Text("Guardar"))]));
-  }
-
-  void _editarMeta(BuildContext context, TareaProvider proveedor) {
-    final controller = TextEditingController(text: proveedor.metaAhorro.toInt().toString());
-    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Cambiar Meta"), content: TextField(controller: controller, keyboardType: TextInputType.number), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")), ElevatedButton(onPressed: () { proveedor.actualizarMeta(double.tryParse(controller.text) ?? 2000000); Navigator.pop(ctx); }, child: const Text("Guardar"))]));
+    proveedor.aprobarTareaManual(tarea);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Aprobada manualmente")));
   }
 
   void _confirmarBorrar(BuildContext context, TareaProvider proveedor, Tarea tarea) {
-    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Eliminar Tarea"), content: Text("¿Borrar '${tarea.nombre}'?"), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("No")), TextButton(onPressed: () { proveedor.eliminarTarea(tarea); Navigator.pop(ctx); }, style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text("Sí, borrar"))]));
+    showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("Eliminar"), content: Text("¿Borrar ${tarea.nombre}?"), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("No")), TextButton(onPressed: () { proveedor.eliminarTarea(tarea); Navigator.pop(ctx); }, child: const Text("Sí"))]));
   }
 
   void _mostrarFormularioTarea(BuildContext context, Tarea? tareaExistente) {
@@ -779,7 +665,6 @@ class PantallaAdmin extends StatelessWidget {
 class FormularioTarea extends StatefulWidget {
   final Tarea? tarea;
   const FormularioTarea({super.key, this.tarea});
-
   @override
   State<FormularioTarea> createState() => _FormularioTareaState();
 }
@@ -796,14 +681,11 @@ class _FormularioTareaState extends State<FormularioTarea> {
 
   final List<Map<String, dynamic>> _plantillas = [
     {"nombre": "Cepillarse Dientes", "puntos": "0", "obligatoria": true, "icono": Icons.cleaning_services, "bloque": "manana", "recurrencia": "diaria"},
-    {"nombre": "Bañarse", "puntos": "50", "obligatoria": true, "icono": Icons.bathtub, "bloque": "manana", "recurrencia": "diaria"},
+    {"nombre": "Bañarse", "puntos": "0", "obligatoria": true, "icono": Icons.bathtub, "bloque": "manana", "recurrencia": "diaria"},
     {"nombre": "Hacer la Cama", "puntos": "100", "obligatoria": true, "icono": Icons.bed, "bloque": "manana", "recurrencia": "diaria"},
     {"nombre": "Hacer Tareas Escuela", "puntos": "500", "obligatoria": true, "icono": Icons.school, "bloque": "tarde", "recurrencia": "semanal"},
     {"nombre": "Recoger Juguetes", "puntos": "200", "obligatoria": false, "icono": Icons.toys, "bloque": "noche", "recurrencia": "diaria"},
-    {"nombre": "Alistar Maleta", "puntos": "100", "obligatoria": true, "icono": Icons.backpack, "bloque": "noche", "recurrencia": "semanal"},
-    {"nombre": "Practicar Patinaje", "puntos": "300", "obligatoria": false, "icono": Icons.roller_skating, "bloque": "tarde", "recurrencia": "semanal"},
   ];
-
   final List<IconData> _iconosDisponibles = [Icons.cleaning_services, Icons.checkroom, Icons.local_dining, Icons.piano, Icons.menu_book, Icons.backpack, Icons.bed, Icons.school, Icons.pets, Icons.sports_soccer, Icons.computer, Icons.star, Icons.directions_bike, Icons.pool, Icons.bathtub, Icons.toys, Icons.roller_skating];
 
   @override
@@ -829,15 +711,8 @@ class _FormularioTareaState extends State<FormularioTarea> {
       _icono = plantilla["icono"];
       _bloque = plantilla["bloque"];
       _tipoRecurrencia = plantilla["recurrencia"];
-      if (plantilla["nombre"].toString().contains("Escuela") || plantilla["nombre"].toString().contains("Maleta")) {
-        _diasSeleccionados = [1, 2, 3, 4, 5];
-        _tipoRecurrencia = 'semanal';
-      } else {
-        _diasSeleccionados = [1, 2, 3, 4, 5, 6, 7];
-        _tipoRecurrencia = 'diaria';
-      }
+      _diasSeleccionados = [1, 2, 3, 4, 5, 6, 7];
     });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Plantilla cargada."), duration: const Duration(seconds: 1)));
   }
 
   @override
@@ -853,18 +728,14 @@ class _FormularioTareaState extends State<FormularioTarea> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(widget.tarea == null ? "Nueva Misión" : "Editar Misión", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
-            if (widget.tarea == null) ...[
-              const SizedBox(height: 10), const Text("🚀 Rutinas Rápidas:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 8),
-              SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _plantillas.map((p) => Padding(padding: const EdgeInsets.only(right: 8.0), child: ActionChip(avatar: Icon(p['icono'], size: 16, color: Colors.white), label: Text(p['nombre']), backgroundColor: Colors.indigo.shade300, labelStyle: const TextStyle(color: Colors.white, fontSize: 12), onPressed: () => _cargarPlantilla(p)))).toList())),
-              const Divider(height: 25),
-            ],
+            if (widget.tarea == null) ...[ const SizedBox(height: 10), const Text("🚀 Rutinas Rápidas:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _plantillas.map((p) => Padding(padding: const EdgeInsets.only(right: 8.0), child: ActionChip(avatar: Icon(p['icono'], size: 16, color: Colors.white), label: Text(p['nombre']), backgroundColor: Colors.indigo.shade300, labelStyle: const TextStyle(color: Colors.white, fontSize: 12), onPressed: () => _cargarPlantilla(p)))).toList())), const Divider(height: 25)],
             TextField(controller: _nombreCtrl, decoration: const InputDecoration(labelText: "Nombre Tarea", prefixIcon: Icon(Icons.task_alt))),
             const SizedBox(height: 10),
             Row(children: [Expanded(child: TextField(controller: _puntosCtrl, decoration: const InputDecoration(labelText: "Puntos", prefixIcon: Icon(Icons.monetization_on)), keyboardType: TextInputType.number)), const SizedBox(width: 10), Expanded(child: Container(decoration: BoxDecoration(color: _esObligatoria ? Colors.red[50] : Colors.grey[100], borderRadius: BorderRadius.circular(12), border: _esObligatoria ? Border.all(color: Colors.red.shade300) : null), child: SwitchListTile(title: const Text("Llave 🔑", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), subtitle: const Text("Obligatoria", style: TextStyle(fontSize: 10)), value: _esObligatoria, activeColor: Colors.red, dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10), onChanged: (val) => setState(() => _esObligatoria = val))))]),
             const SizedBox(height: 15),
             const Text("Frecuencia:", style: TextStyle(fontWeight: FontWeight.bold)),
             Wrap(spacing: 8.0, children: [ChoiceChip(label: const Text("Diaria"), selected: _tipoRecurrencia == 'diaria', onSelected: (val) => setState(() => _tipoRecurrencia = 'diaria')), ChoiceChip(label: const Text("Días Específicos"), selected: _tipoRecurrencia == 'semanal', onSelected: (val) => setState(() => _tipoRecurrencia = 'semanal')), ChoiceChip(label: const Text("Reto Único (Fecha)"), selected: _tipoRecurrencia == 'fecha_fija', onSelected: (val) => setState(() => _tipoRecurrencia = 'fecha_fija'))]),
-            if (_tipoRecurrencia == 'semanal') Wrap(spacing: 5, children: [for (var i = 1; i <= 7; i++) FilterChip(label: Text(_diaLetra(i)), selected: _diasSeleccionados.contains(i), onSelected: (selected) { setState(() { if (selected) { _diasSeleccionados.add(i); } else { _diasSeleccionados.remove(i); } }); })]),
+            if (_tipoRecurrencia == 'semanal') Wrap(spacing: 5, children: [for (var i = 1; i <= 7; i++) FilterChip(label: Text(['L','M','X','J','V','S','D'][i-1]), selected: _diasSeleccionados.contains(i), onSelected: (selected) { setState(() { if (selected) { _diasSeleccionados.add(i); } else { _diasSeleccionados.remove(i); } }); })]),
             if (_tipoRecurrencia == 'fecha_fija') ListTile(title: Text(_fechaFija == null ? "Seleccionar Fecha" : DateFormat('dd/MM/yyyy').format(_fechaFija!)), leading: const Icon(Icons.calendar_today, color: Colors.indigo), tileColor: Colors.grey[200], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), onTap: () async { final picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030)); if (picked != null) setState(() => _fechaFija = picked); }),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(value: _bloque, items: const [DropdownMenuItem(value: 'manana', child: Text("🌞 Mañana")), DropdownMenuItem(value: 'tarde', child: Text("⛅ Tarde")), DropdownMenuItem(value: 'noche', child: Text("🌙 Noche"))], onChanged: (val) => setState(() => _bloque = val!)),
@@ -873,8 +744,6 @@ class _FormularioTareaState extends State<FormularioTarea> {
             const SizedBox(height: 20),
             ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)), onPressed: () {
               if (_nombreCtrl.text.isEmpty) return;
-              if (_tipoRecurrencia == 'fecha_fija' && _fechaFija == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Selecciona una fecha para el reto"))); return; }
-
               if (widget.tarea == null) {
                 proveedor.agregarTarea(nombre: _nombreCtrl.text, puntos: int.tryParse(_puntosCtrl.text) ?? 0, obligatoria: _esObligatoria, icon: _icono, bloque: _bloque, tipoRecurrencia: _tipoRecurrencia, diasSemana: _diasSeleccionados, fechaEspecifica: _fechaFija);
               } else {
@@ -888,6 +757,4 @@ class _FormularioTareaState extends State<FormularioTarea> {
       ),
     );
   }
-
-  String _diaLetra(int dia) { const letras = ['L', 'M', 'X', 'J', 'V', 'S', 'D']; return letras[dia - 1]; }
 }
