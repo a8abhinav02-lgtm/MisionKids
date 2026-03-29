@@ -14,8 +14,6 @@ class Tarea extends HiveObject {
   @HiveField(2)
   bool esObligatoria;
 
-  // CAMBIO 1: Reemplazamos 'estaCompletada' (bool) por un estado más complejo
-  // Valores: 'pendiente', 'revision' (hecha por el niño), 'aprobada' (puntos sumados)
   @HiveField(3)
   String estado;
 
@@ -25,30 +23,33 @@ class Tarea extends HiveObject {
   @HiveField(5)
   String bloque; // 'manana', 'tarde', 'noche'
 
-  // CAMBIO 2: Nuevos campos para Recurrencia
   @HiveField(6)
   String tipoRecurrencia; // 'diaria', 'semanal', 'fecha_fija'
 
   @HiveField(7)
-  List<int> diasSemana; // [1, 2, 3, 4, 5, 6, 7] (Lunes a Domingo)
+  List<int> diasSemana; // [1, 2, 3, 4, 5, 6, 7]
 
   @HiveField(8)
-  DateTime? fechaEspecifica; // Para tareas de una sola vez (ej: Reto del Sábado)
+  DateTime? fechaEspecifica;
 
   @HiveField(9)
-  int ultimoDiaCompletado; // Guardamos el día del año para resetear tareas diarias automáticamente
+  int ultimoDiaCompletado;
+
+  @HiveField(10)
+  String perfilId; // NUEVO: Para saber de qué niño es la tarea
 
   Tarea({
     required this.nombre,
     required this.puntos,
     required this.esObligatoria,
-    this.estado = 'pendiente', // Por defecto
+    this.estado = 'pendiente',
     required this.iconoCodePoint,
     required this.bloque,
     this.tipoRecurrencia = 'diaria',
-    this.diasSemana = const [1,2,3,4,5,6,7], // Por defecto todos los días
+    this.diasSemana = const [1,2,3,4,5,6,7],
     this.fechaEspecifica,
     this.ultimoDiaCompletado = 0,
+    required this.perfilId,
   });
 
   IconData get icono => IconData(iconoCodePoint, fontFamily: 'MaterialIcons');

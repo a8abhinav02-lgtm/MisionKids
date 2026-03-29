@@ -1,0 +1,534 @@
+﻿
+> class 
+FormularioTarea 
+extends StatefulWidget 
+{
+    final Tarea? tarea;
+    const FormularioTar
+ea({super.key, 
+this.tarea});
+  
+    @override
+    
+State<FormularioTarea> 
+createState() => _Formu
+larioTareaState();
+  }
+  
+  class 
+_FormularioTareaState 
+extends 
+State<FormularioTarea> 
+{
+    final _nombreCtrl 
+= TextEditingController
+();
+    final _puntosCtrl 
+= TextEditingController
+();
+    String _bloque = 
+'manana';
+    bool 
+_esObligatoria = false;
+    IconData _icono = 
+Icons.star;
+    String 
+_tipoRecurrencia = 
+'diaria';
+    List<int> 
+_diasSeleccionados = 
+[1, 2, 3, 4, 5, 6, 7];
+    DateTime? 
+_fechaFija;
+  
+    final 
+List<Map<String, 
+dynamic>> _plantillas 
+= [
+      {"nombre": 
+"Cepillarse Dientes", 
+"puntos": "0", 
+"obligatoria": true, 
+"icono": Icons.cleaning
+_services, "bloque": 
+"manana", 
+"recurrencia": 
+"diaria"},
+      {"nombre": 
+"Ba├▒arse", "puntos": 
+"50", "obligatoria": 
+true, "icono": 
+Icons.bathtub, 
+"bloque": "manana", 
+"recurrencia": 
+"diaria"},
+      {"nombre": 
+"Hacer la Cama", 
+"puntos": "100", 
+"obligatoria": true, 
+"icono": Icons.bed, 
+"bloque": "manana", 
+"recurrencia": 
+"diaria"},
+      {"nombre": 
+"Hacer Tareas 
+Escuela", "puntos": 
+"500", "obligatoria": 
+true, "icono": 
+Icons.school, 
+"bloque": "tarde", 
+"recurrencia": 
+"semanal"},
+      {"nombre": 
+"Recoger Juguetes", 
+"puntos": "200", 
+"obligatoria": false, 
+"icono": Icons.toys, 
+"bloque": "noche", 
+"recurrencia": 
+"diaria"},
+      {"nombre": 
+"Alistar Maleta", 
+"puntos": "100", 
+"obligatoria": true, 
+"icono": 
+Icons.backpack, 
+"bloque": "noche", 
+"recurrencia": 
+"semanal"},
+      {"nombre": 
+"Practicar Patinaje", 
+"puntos": "300", 
+"obligatoria": false, 
+"icono": 
+Icons.roller_skating, 
+"bloque": "tarde", 
+"recurrencia": 
+"semanal"},
+    ];
+  
+    final 
+List<IconData> 
+_iconosDisponibles = [I
+cons.cleaning_services,
+ Icons.checkroom, 
+Icons.local_dining, 
+Icons.piano, 
+Icons.menu_book, 
+Icons.backpack, 
+Icons.bed, 
+Icons.school, 
+Icons.pets, 
+Icons.sports_soccer, 
+Icons.computer, 
+Icons.star, 
+Icons.directions_bike, 
+Icons.pool, 
+Icons.bathtub, 
+Icons.toys, 
+Icons.roller_skating];
+  
+    @override
+    void initState() {
+      
+super.initState();
+      if (widget.tarea 
+!= null) {
+        
+_nombreCtrl.text = 
+widget.tarea!.nombre;
+        
+_puntosCtrl.text = widg
+et.tarea!.puntos.toStri
+ng();
+        _bloque = 
+widget.tarea!.bloque;
+        _esObligatoria 
+= widget.tarea!.esOblig
+atoria;
+        _icono = 
+widget.tarea!.icono;
+        
+_tipoRecurrencia = widg
+et.tarea!.tipoRecurrenc
+ia;
+        
+_diasSeleccionados = Li
+st.from(widget.tarea!.d
+iasSemana);
+        _fechaFija = wi
+dget.tarea!.fechaEspeci
+fica;
+      }
+    }
+  
+    void _cargarPlantil
+la(Map<String, 
+dynamic> plantilla) {
+      setState(() {
+        
+_nombreCtrl.text = 
+plantilla["nombre"];
+        
+_puntosCtrl.text = 
+plantilla["puntos"];
+        _esObligatoria 
+= plantilla["obligatori
+a"];
+        _icono = 
+plantilla["icono"];
+        _bloque = 
+plantilla["bloque"];
+        
+_tipoRecurrencia = plan
+tilla["recurrencia"];
+        if (plantilla["
+nombre"].toString().con
+tains("Escuela") || pla
+ntilla["nombre"].toStri
+ng().contains("Maleta")
+) {
+          
+_diasSeleccionados = 
+[1, 2, 3, 4, 5];
+          
+_tipoRecurrencia = 
+'semanal';
+        } else {
+          
+_diasSeleccionados = 
+[1, 2, 3, 4, 5, 6, 7];
+          
+_tipoRecurrencia = 
+'diaria';
+        }
+      });
+      ScaffoldMessenger
+.of(context).showSnackB
+ar(SnackBar(content: 
+Text("Plantilla 
+cargada."), duration: 
+const 
+Duration(seconds: 1)));
+    }
+  
+    @override
+    Widget 
+build(BuildContext 
+context) {
+      final proveedor 
+= Provider.of<TareaProv
+ider>(context, listen: 
+false);
+      final 
+bottomPadding = MediaQu
+ery.of(context).viewIns
+ets.bottom + MediaQuery
+.of(context).padding.bo
+ttom + 20;
+  
+      return Padding(
+        padding: EdgeIn
+sets.only(bottom: 
+bottomPadding, left: 
+20, right: 20, top: 
+20),
+        child: 
+SingleChildScrollView(
+          child: 
+Column(
+            
+mainAxisSize: 
+MainAxisSize.min,
+            
+crossAxisAlignment: Cro
+ssAxisAlignment.stretch
+,
+            children: [
+              
+Row(mainAxisAlignment: 
+MainAxisAlignment.space
+Between, children: 
+[Text(widget.tarea == 
+null ? "Nueva Misi├│n" 
+: "Editar Misi├│n", 
+style: const 
+TextStyle(fontSize: 
+22, fontWeight: 
+FontWeight.bold, 
+color: 
+Colors.indigo)), 
+IconButton(icon: const 
+Icon(Icons.close), 
+onPressed: () => Naviga
+tor.pop(context))]),
+              if 
+(widget.tarea == null) 
+...[
+                const 
+SizedBox(height: 10), 
+const Text("ƒÜÇ 
+Rutinas R├ípidas:", 
+style: 
+TextStyle(fontWeight: 
+FontWeight.bold, 
+color: Colors.grey)), 
+const SizedBox(height: 
+8),
+                SingleC
+hildScrollView(scrollDi
+rection: 
+Axis.horizontal, 
+child: Row(children: 
+_plantillas.map((p) => 
+Padding(padding: const 
+EdgeInsets.only(right: 
+8.0), child: 
+ActionChip(avatar: 
+Icon(p['icono'], size: 
+16, color: 
+Colors.white), label: 
+Text(p['nombre']), 
+backgroundColor: Colors
+.indigo.shade300, 
+labelStyle: const 
+TextStyle(color: 
+Colors.white, 
+fontSize: 12), 
+onPressed: () => _carga
+rPlantilla(p)))).toList
+())),
+                const 
+Divider(height: 25),
+              ],
+              
+TextField(controller: 
+_nombreCtrl, 
+decoration: const Input
+Decoration(labelText: 
+"Nombre Tarea", 
+prefixIcon: 
+Icon(Icons.task_alt))),
+              const 
+SizedBox(height: 10),
+              
+Row(children: 
+[Expanded(child: 
+TextField(controller: 
+_puntosCtrl, 
+decoration: const Input
+Decoration(labelText: 
+"Puntos", prefixIcon: I
+con(Icons.monetization_
+on)), keyboardType: Tex
+tInputType.number)), 
+const SizedBox(width: 
+10), Expanded(child: 
+Container(decoration: 
+BoxDecoration(color: 
+_esObligatoria ? 
+Colors.red[50] : 
+Colors.grey[100], 
+borderRadius: BorderRad
+ius.circular(12), 
+border: _esObligatoria 
+? Border.all(color: 
+Colors.red.shade300) : 
+null), child: 
+SwitchListTile(title: 
+const Text("Llave 
+ƒöæ", style: 
+TextStyle(fontWeight: 
+FontWeight.bold, 
+fontSize: 14)), 
+subtitle: const 
+Text("Obligatoria", 
+style: 
+TextStyle(fontSize: 
+10)), value: 
+_esObligatoria, 
+activeColor: 
+Colors.red, dense: 
+true, contentPadding: 
+const EdgeInsets.symmet
+ric(horizontal: 10), 
+onChanged: (val) => 
+setState(() => 
+_esObligatoria = 
+val))))]),
+              const 
+SizedBox(height: 15),
+              const 
+Text("Frecuencia:", 
+style: 
+TextStyle(fontWeight: 
+FontWeight.bold)),
+              
+Wrap(spacing: 8.0, 
+children: 
+[ChoiceChip(label: 
+const Text("Diaria"), 
+selected: 
+_tipoRecurrencia == 
+'diaria', onSelected: 
+(val) => setState(() 
+=> _tipoRecurrencia = 
+'diaria')), 
+ChoiceChip(label: 
+const Text("D├¡as 
+Espec├¡ficos"), 
+selected: 
+_tipoRecurrencia == 
+'semanal', onSelected: 
+(val) => setState(() 
+=> _tipoRecurrencia = 
+'semanal')), 
+ChoiceChip(label: 
+const Text("Reto 
+├Ünico (Fecha)"), 
+selected: 
+_tipoRecurrencia == 
+'fecha_fija', 
+onSelected: (val) => 
+setState(() => 
+_tipoRecurrencia = 
+'fecha_fija'))]),
+              if 
+(_tipoRecurrencia == 
+'semanal') 
+Wrap(spacing: 5, 
+children: [for (var i 
+= 1; i <= 7; i++) 
+FilterChip(label: 
+Text(_diaLetra(i)), 
+selected: _diasSeleccio
+nados.contains(i), 
+onSelected: (selected) 
+{ setState(() { if 
+(selected) { _diasSelec
+cionados.add(i); } 
+else { _diasSeleccionad
+os.remove(i); } }); 
+})]),
+              if 
+(_tipoRecurrencia == 
+'fecha_fija') 
+ListTile(title: 
+Text(_fechaFija == 
+null ? "Seleccionar 
+Fecha" : DateFormat('dd
+/MM/yyyy').format(_fech
+aFija!)), leading: 
+const Icon(Icons.calend
+ar_today, color: 
+Colors.indigo), 
+tileColor: 
+Colors.grey[200], 
+shape: RoundedRectangle
+Border(borderRadius: Bo
+rderRadius.circular(10)
+), onTap: () async { 
+final picked = await sh
+owDatePicker(context: 
+context, initialDate: 
+DateTime.now(), 
+firstDate: 
+DateTime.now(), 
+lastDate: 
+DateTime(2030)); if 
+(picked != null) 
+setState(() => 
+_fechaFija = picked); 
+}),
+              const 
+SizedBox(height: 10),
+              DropdownB
+uttonFormField<String>(
+value: _bloque, items: 
+const [DropdownMenuItem
+(value: 'manana', 
+child: Text("ƒî× 
+Ma├▒ana")), DropdownMen
+uItem(value: 'tarde', 
+child: Text("Ôøà 
+Tarde")), DropdownMenuI
+tem(value: 'noche', 
+child: Text("ƒîÖ 
+Noche"))], onChanged: 
+(val) => setState(() 
+=> _bloque = val!)),
+              const 
+SizedBox(height: 10),
+              
+SizedBox(height: 60, 
+child: ListView(scrollD
+irection: 
+Axis.horizontal, 
+children: _iconosDispon
+ibles.map((icon) => 
+GestureDetector(onTap: 
+() => setState(() => 
+_icono = icon), child: 
+Container(margin: 
+const 
+EdgeInsets.only(right: 
+10), padding: const 
+EdgeInsets.all(12), 
+decoration: 
+BoxDecoration(color: 
+_icono == icon ? 
+Colors.indigo : 
+Colors.grey[200], 
+shape: 
+BoxShape.circle), 
+child: Icon(icon, 
+color: _icono == icon 
+? Colors.white : Colors
+.black54)))).toList()))
+,
+              const 
+SizedBox(height: 20),
+              
+ElevatedButton(style: E
+levatedButton.styleFrom
+(backgroundColor: 
+Colors.indigo, 
+foregroundColor: 
+Colors.white, padding: 
+const EdgeInsets.symmet
+ric(vertical: 15)), 
+onPressed: () {
+                if (_no
+mbreCtrl.text.isEmpty) 
+return;
+                if 
+(_tipoRecurrencia == 
+'fecha_fija' && 
+_fechaFija == null) { S
+caffoldMessenger.of(con
+text).showSnackBar(cons
+t SnackBar(content: 
+Text("Selecciona una 
+fecha para el 
+reto"))); return; }
+  
+                if 
+(widget.tarea == null) 
+{
+                  prove
+edor.agregarTarea(nombr
+e: _nombreCtrl.text, 
+puntos: int.tryParse(_p
+untosCtrl.text) ?? 0, 
+obligatoria: 
+_esObligatoria, icon: 
+_icono, bloque: 
+_bloque, 
+tipoRecurrencia: 
+_tipoRecurrencia, 
+diasSemana: 
+_diasSeleccionados, 
+fechaEspecifica: 
+_fechaFija);
+
+
