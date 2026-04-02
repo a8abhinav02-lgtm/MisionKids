@@ -321,7 +321,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
 
           if (tarea.estaEnRevision) {
             colorCard = Colors.orange.shade50;
-            iconStatus = Icons.hourglass_top;
+            iconStatus = Icons.watch_later_rounded;
             colorStatus = Colors.orange;
           }
 
@@ -345,6 +345,15 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                 onTap: interactuable ? () {
                   _confettiController.play();
                   tareaProv.solicitarRevision(tarea);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("¡${tarea.nombre} enviada! Espera a revisión 🕒"),
+                        backgroundColor: colorBase,
+                        duration: const Duration(seconds: 2),
+                      )
+                    );
+                  }
                 } : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -370,8 +379,14 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                             Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: interactuable ? Colors.black87 : Colors.grey)),
                             const SizedBox(height: 2),
                             Text(
-                              tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}",
-                              style: TextStyle(color: tarea.esObligatoria ? Colors.red : Colors.green.shade600, fontWeight: FontWeight.w600, fontSize: 13),
+                              tarea.estaEnRevision 
+                                ? "⏳ En espera de aprobación..." 
+                                : (tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}"),
+                              style: TextStyle(
+                                color: tarea.estaEnRevision ? Colors.orange : (tarea.esObligatoria ? Colors.red : Colors.green.shade600), 
+                                fontWeight: FontWeight.w600, 
+                                fontSize: 13
+                              ),
                             ),
                           ],
                         ),
