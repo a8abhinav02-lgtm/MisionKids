@@ -1,24 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/perfil_model.dart';
 
 class PerfilesProvider extends ChangeNotifier {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   Box<Perfil>? _cajaPerfiles;
+  
   bool isLoading = true;
-
+  String _uid = '';
   Perfil? _perfilActivo;
+  List<Perfil> _perfilesFirestore = [];
   
   Perfil? get perfilActivo => _perfilActivo;
+  String get uid => _uid;
 
   List<Perfil> get todosLosPerfiles {
-    if (_cajaPerfiles == null || !_cajaPerfiles!.isOpen) return [];
-    return _cajaPerfiles!.values.toList();
+    // Retornamos los de Firestore si están cargados, si no, los de Hive
+    return _perfilesFirestore.isNotEmpty ? _perfilesFirestore : (_cajaPerfiles?.values.toList() ?? []);
   }
 
+  void updateUid(String newUid) {
+    if (_uid != newUid) {
+      _uid = newUid;
+      if (_uid.isNotEmpty) {
+        _escucharPerfiles();
+      }
+    }
+  }
+
+  bool _inicializacionIniciada = false;
+
   Future<void> inicializar() async {
+    if (_inicializacionIniciada) return;
+    _inicializacionIniciada = true;
+
     _cajaPerfiles = await Hive.openBox<Perfil>('caja_perfiles_v2');
+    if (_uid.isNotEmpty) {
+      await _migrarHiveAFirestore();
+      _escucharPerfiles();
+    }
     isLoading = false;
     notifyListeners();
+  }
+
+  void _escucharPerfiles() {
+    if (_uid.isEmpty) return;
+    _db.collection('familias').doc(_uid).collection('perfiles')
+      .snapshots().listen((snapshot) {
+        _perfilesFirestore = snapshot.docs.map((doc) => Perfil.fromMap(doc.data())).toList();
+        notifyListeners();
+      });
+  }
+
+  Future<void> _migrarHiveAFirestore() async {
+    if (_uid.isEmpty || _cajaPerfiles == null) return;
+    final perfilesLocal = _cajaPerfiles!.values.toList();
+    if (perfilesLocal.isNotEmpty) {
+      for (var p in perfilesLocal) {
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(p.id).set(p.toMap());
+      }
+      // Opcional: Limpiar Hive después de migrar
+      // await _cajaPerfiles!.clear();
+    }
   }
 
   void setPerfilActivo(Perfil perfil) {
@@ -32,7 +76,7 @@ class PerfilesProvider extends ChangeNotifier {
   }
   
   Perfil? buscarPerfil(String id) {
-     return _cajaPerfiles?.get(id);
+     return todosLosPerfiles.firstWhere((p) => p.id == id, orElse: () => null as Perfil);
   }
 
   Future<void> crearPerfil({
@@ -47,7 +91,12 @@ class PerfilesProvider extends ChangeNotifier {
       tematica: tematica,
       colorPrimario: colorPrimario,
     );
-    await _cajaPerfiles!.put(newId, nuevo);
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(newId).set(nuevo.toMap());
+    } else {
+      await _cajaPerfiles!.put(newId, nuevo);
+    }
     notifyListeners();
   }
 
@@ -55,42 +104,59 @@ class PerfilesProvider extends ChangeNotifier {
     perfil.nombre = nombre;
     perfil.tematica = tematica;
     perfil.colorPrimario = colorPrimario;
-    await perfil.save();
+    
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfil.id).update(perfil.toMap());
+    } else {
+      await perfil.save();
+    }
     notifyListeners();
   }
 
   Future<void> eliminarPerfil(Perfil perfil) async {
-    await perfil.delete();
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfil.id).delete();
+    } else {
+      await perfil.delete();
+    }
+    
     if (_perfilActivo?.id == perfil.id) {
        _perfilActivo = null;
     }
     notifyListeners();
   }
 
-  // --- Finanzas del Perfil Activo ---
+  // --- Finanzas ---
   Future<void> agregarDinero(String perfilId, int cantidad) async {
-    final perfil = _cajaPerfiles?.get(perfilId);
-    if (perfil != null) {
-      perfil.saldo += cantidad;
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    perfil.saldo += cantidad;
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({'saldo': perfil.saldo});
+    } else {
       await perfil.save();
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<void> definirNuevaMeta(String perfilId, String nombre, double monto) async {
-    final perfil = _cajaPerfiles?.get(perfilId);
-    if (perfil != null) {
-      perfil.nombreMeta = nombre;
-      perfil.metaAhorro = monto;
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    perfil.nombreMeta = nombre;
+    perfil.metaAhorro = monto;
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'nombreMeta': nombre,
+        'metaAhorro': monto,
+      });
+    } else {
       await perfil.save();
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<void> reclamarPremio(String perfilId) async {
-    final perfil = _cajaPerfiles?.get(perfilId);
-    if (perfil == null) return;
-    
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
     final costoMeta = perfil.metaAhorro.toInt();
     final nombrePremio = perfil.nombreMeta;
 
@@ -110,7 +176,11 @@ class PerfilesProvider extends ChangeNotifier {
       perfil.metaAhorro = 0.0;
       perfil.nombreMeta = '';
 
-      await perfil.save();
+      if (_uid.isNotEmpty) {
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update(perfil.toMap());
+      } else {
+        await perfil.save();
+      }
       notifyListeners();
     }
   }

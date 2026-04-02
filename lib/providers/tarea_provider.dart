@@ -1,39 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tarea_model.dart';
 import 'package:intl/intl.dart';
 
 class TareaProvider extends ChangeNotifier {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   Box<Tarea>? _cajaTareas;
+  
   bool isLoading = true;
+  String _uid = '';
+  List<Tarea> _tareasFirestore = [];
 
   int get _fechaIdHoy {
     final now = DateTime.now();
     return (now.year * 10000) + (now.month * 100) + now.day;
   }
 
+  String get uid => _uid;
+
+  List<Tarea> get _todasLasTareasData {
+    return _tareasFirestore.isNotEmpty ? _tareasFirestore : (_cajaTareas?.values.toList() ?? []);
+  }
+
+  void updateUid(String newUid) {
+    if (_uid != newUid) {
+      _uid = newUid;
+      if (_uid.isNotEmpty) {
+        _escucharTareas();
+      }
+    }
+  }
+
+  bool _inicializacionIniciada = false;
+
   Future<void> inicializar() async {
+    if (_inicializacionIniciada) return;
+    _inicializacionIniciada = true;
+
     _cajaTareas = await Hive.openBox<Tarea>('caja_tareas_v6');
+    if (_uid.isNotEmpty) {
+      await _migrarHiveAFirestore();
+      _escucharTareas();
+    }
     _verificarNuevoDia();
     isLoading = false;
     notifyListeners();
   }
 
-  void _verificarNuevoDia() {
-    final hoyId = _fechaIdHoy;
-    for (var tarea in _cajaTareas!.values) {
-      if (tarea.tipoRecurrencia != 'fecha_fija') {
-        if (tarea.ultimoDiaCompletado != hoyId && (tarea.estado == 'aprobada' || tarea.estado == 'revision')) {
-          tarea.estado = 'pendiente';
-          tarea.save();
+  void _escucharTareas() {
+    if (_uid.isEmpty) return;
+    _db.collection('familias').doc(_uid).collection('tareas')
+      .snapshots().listen((snapshot) {
+        _tareasFirestore = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return Tarea.fromMap(data);
+        }).toList();
+        _verificarNuevoDia();
+        notifyListeners();
+      });
+  }
+
+  Future<void> _migrarHiveAFirestore() async {
+    if (_uid.isEmpty || _cajaTareas == null) return;
+    final tareasLocales = _cajaTareas!.values.toList();
+    if (tareasLocales.isNotEmpty) {
+      for (var t in tareasLocales) {
+        // Generamos ID si no tiene
+        if (t.id.isEmpty) {
+          t.id = DateTime.now().millisecondsSinceEpoch.toString() + tareasLocales.indexOf(t).toString();
         }
+        await _db.collection('familias').doc(_uid).collection('tareas').doc(t.id).set(t.toMap());
       }
+      // Opcional: await _cajaTareas!.clear();
     }
   }
 
+  void _verificarNuevoDia() {
+    final hoyId = _fechaIdHoy;
+    bool huboCambio = false;
+
+    for (var tarea in _todasLasTareasData) {
+      if (tarea.tipoRecurrencia != 'fecha_fija') {
+        if (tarea.ultimoDiaCompletado != hoyId && (tarea.estado == 'aprobada' || tarea.estado == 'revision')) {
+          tarea.estado = 'pendiente';
+          huboCambio = true;
+          if (_uid.isNotEmpty) {
+            _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({'estado': 'pendiente'});
+          } else {
+            tarea.save();
+          }
+        }
+      }
+    }
+    if (huboCambio) notifyListeners();
+  }
+
   List<Tarea> _tareasDelPerfil(String perfilId) {
-    if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
-    return _cajaTareas!.values.where((t) => t.perfilId == perfilId).toList();
+    return _todasLasTareasData.where((t) => t.perfilId == perfilId).toList();
   }
 
   List<Tarea> listaTareasActivas(String perfilId) {
@@ -79,8 +143,7 @@ class TareaProvider extends ChangeNotifier {
   }
 
   List<Tarea> todasTareasPorRevisarGoblal() {
-    if (_cajaTareas == null || !_cajaTareas!.isOpen) return [];
-    return _cajaTareas!.values.where((t) => t.estado == 'revision').toList();
+    return _todasLasTareasData.where((t) => t.estado == 'revision').toList();
   }
 
   Future<void> agregarTarea({
@@ -89,13 +152,20 @@ class TareaProvider extends ChangeNotifier {
     List<int> diasSemana = const [1,2,3,4,5,6,7], DateTime? fechaEspecifica,
     required String perfilId,
   }) async {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final nuevaTarea = Tarea(
+        id: newId,
         nombre: nombre, puntos: puntos, esObligatoria: obligatoria,
         iconoCodePoint: icon.codePoint, bloque: bloque,
         tipoRecurrencia: tipoRecurrencia, diasSemana: diasSemana,
         fechaEspecifica: fechaEspecifica, perfilId: perfilId,
     );
-    await _cajaTareas!.add(nuevaTarea);
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('tareas').doc(newId).set(nuevaTarea.toMap());
+    } else {
+      await _cajaTareas!.add(nuevaTarea);
+    }
     notifyListeners();
   }
 
@@ -108,23 +178,39 @@ class TareaProvider extends ChangeNotifier {
     tarea.iconoCodePoint = icon.codePoint; tarea.bloque = bloque;
     tarea.tipoRecurrencia = tipoRecurrencia; tarea.diasSemana = diasSemana;
     tarea.fechaEspecifica = fechaEspecifica;
-    await tarea.save();
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update(tarea.toMap());
+    } else {
+      await tarea.save();
+    }
     notifyListeners();
   }
 
   Future<void> eliminarTarea(Tarea tarea) async {
-    await tarea.delete();
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).delete();
+    } else {
+      await tarea.delete();
+    }
     notifyListeners();
   }
 
   Future<Tarea> aplicarSancion(String motivo, int monto, String perfilId) async {
+    final newId = "S_${DateTime.now().millisecondsSinceEpoch}";
     final sancion = Tarea(
+      id: newId,
       nombre: "Sanción: $motivo", puntos: -monto, esObligatoria: false,
       iconoCodePoint: Icons.warning_amber_rounded.codePoint, bloque: 'sancion',
       estado: 'aprobada', tipoRecurrencia: 'fecha_fija', fechaEspecifica: DateTime.now(),
       ultimoDiaCompletado: _fechaIdHoy, perfilId: perfilId,
     );
-    await _cajaTareas!.add(sancion);
+    
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('tareas').doc(newId).set(sancion.toMap());
+    } else {
+      await _cajaTareas!.add(sancion);
+    }
     notifyListeners();
     return sancion;
   }
@@ -132,14 +218,22 @@ class TareaProvider extends ChangeNotifier {
   void solicitarRevision(Tarea tarea) {
     if (tarea.estado == 'pendiente') {
       tarea.estado = 'revision';
-      tarea.save();
+      if (_uid.isNotEmpty) {
+        _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({'estado': 'revision'});
+      } else {
+        tarea.save();
+      }
       notifyListeners();
     }
   }
 
   void rechazarTarea(Tarea tarea) {
     tarea.estado = 'pendiente';
-    tarea.save();
+    if (_uid.isNotEmpty) {
+      _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({'estado': 'pendiente'});
+    } else {
+      tarea.save();
+    }
     notifyListeners();
   }
 
@@ -147,7 +241,14 @@ class TareaProvider extends ChangeNotifier {
     if (tarea.estado == 'revision') {
       tarea.estado = 'aprobada';
       tarea.ultimoDiaCompletado = _fechaIdHoy;
-      tarea.save();
+      if (_uid.isNotEmpty) {
+        _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({
+          'estado': 'aprobada',
+          'ultimoDiaCompletado': _fechaIdHoy,
+        });
+      } else {
+        tarea.save();
+      }
       notifyListeners();
       return true;
     }
@@ -158,12 +259,18 @@ class TareaProvider extends ChangeNotifier {
     bool yaEstabaPagada = (tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == _fechaIdHoy);
     tarea.estado = 'aprobada';
     tarea.ultimoDiaCompletado = _fechaIdHoy;
-    tarea.save();
+    if (_uid.isNotEmpty) {
+      _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({
+        'estado': 'aprobada',
+        'ultimoDiaCompletado': _fechaIdHoy,
+      });
+    } else {
+      tarea.save();
+    }
     notifyListeners();
     return !yaEstabaPagada;
   }
 
-  // Permite un pequeño margen para tareas matutinas (Ej. hasta las 13:00) si lo desea el admin
   String get bloqueActual {
     final hora = DateTime.now().hour;
     if (hora >= 5 && hora < 12) return 'manana';

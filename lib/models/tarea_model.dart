@@ -36,7 +36,10 @@ class Tarea extends HiveObject {
   int ultimoDiaCompletado;
 
   @HiveField(10)
-  String perfilId; // NUEVO: Para saber de qué niño es la tarea
+  String perfilId;
+
+  @HiveField(11)
+  String id; // NUEVO: Para Firestore
 
   Tarea({
     required this.nombre,
@@ -50,7 +53,42 @@ class Tarea extends HiveObject {
     this.fechaEspecifica,
     this.ultimoDiaCompletado = 0,
     required this.perfilId,
+    this.id = '',
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'puntos': puntos,
+      'esObligatoria': esObligatoria,
+      'estado': estado,
+      'iconoCodePoint': iconoCodePoint,
+      'bloque': bloque,
+      'tipoRecurrencia': tipoRecurrencia,
+      'diasSemana': diasSemana,
+      'fechaEspecifica': fechaEspecifica?.toIso8601String(),
+      'ultimoDiaCompletado': ultimoDiaCompletado,
+      'perfilId': perfilId,
+    };
+  }
+
+  factory Tarea.fromMap(Map<String, dynamic> map) {
+    return Tarea(
+      id: map['id'] ?? '',
+      nombre: map['nombre'] ?? '',
+      puntos: map['puntos'] ?? 0,
+      esObligatoria: map['esObligatoria'] ?? false,
+      estado: map['estado'] ?? 'pendiente',
+      iconoCodePoint: map['iconoCodePoint'] ?? 0,
+      bloque: map['bloque'] ?? 'manana',
+      tipoRecurrencia: map['tipoRecurrencia'] ?? 'diaria',
+      diasSemana: List<int>.from(map['diasSemana'] ?? [1,2,3,4,5,6,7]),
+      fechaEspecifica: map['fechaEspecifica'] != null ? DateTime.parse(map['fechaEspecifica'] as String) : null,
+      ultimoDiaCompletado: (map['ultimoDiaCompletado'] as num?)?.toInt() ?? 0,
+      perfilId: map['perfilId'] ?? '',
+    );
+  }
 
   IconData get icono => IconData(iconoCodePoint, fontFamily: 'MaterialIcons');
 

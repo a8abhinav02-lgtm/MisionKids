@@ -160,6 +160,13 @@ class SeleccionPerfilScreen extends StatelessWidget {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () async {
+              await authProv.cerrarSesion();
+              if (ctx.mounted) Navigator.pop(ctx);
+            }, 
+            child: const Text("Cerrar Sesión", style: TextStyle(color: Colors.redAccent)),
+          ),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),

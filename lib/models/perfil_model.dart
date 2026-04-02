@@ -38,4 +38,30 @@ class Perfil extends HiveObject {
     this.nombreMeta = '',
     this.historialVictorias = const [],
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'tematica': tematica,
+      'colorPrimario': colorPrimario,
+      'saldo': saldo,
+      'metaAhorro': metaAhorro,
+      'nombreMeta': nombreMeta,
+      'historialVictorias': historialVictorias,
+    };
+  }
+
+  factory Perfil.fromMap(Map<String, dynamic> map) {
+    return Perfil(
+      id: map['id'] ?? '',
+      nombre: map['nombre'] ?? '',
+      tematica: map['tematica'] ?? 'ninja',
+      colorPrimario: map['colorPrimario'] ?? 'azul',
+      saldo: (map['saldo'] as num?)?.toInt() ?? 0,
+      metaAhorro: (map['metaAhorro'] as num?)?.toDouble() ?? 0.0,
+      nombreMeta: map['nombreMeta'] ?? '',
+      historialVictorias: List<Map<dynamic, dynamic>>.from(map['historialVictorias'] ?? []),
+    );
+  }
 }

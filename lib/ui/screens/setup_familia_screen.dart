@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
 import '../themes/app_theme.dart';
+import 'package:animate_do/animate_do.dart';
 import 'seleccion_perfil_screen.dart';
 
 class SetupFamiliaScreen extends StatefulWidget {
@@ -14,13 +15,17 @@ class SetupFamiliaScreen extends StatefulWidget {
 }
 
 class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   final _confirmPinCtrl = TextEditingController();
   final _nombreHijoCtrl = TextEditingController();
 
   String _colorSeleccionado = 'azul';
   String _avatarSeleccionado = 'astronauta';
-  int _step = 0; // 0 = PIN, 1 = Perfil del hijo
+  int _step = -1; // -1 = Elección Inicial, 0 = Cuenta, 1 = PIN, 2 = Perfil del hijo
+  bool _isCargando = false;
+  bool _isLoginFlow = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,50 +46,62 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                 child: Column(
                   children: [
                     // Logo + Title
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.amber.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3), width: 2),
+                    Hero(
+                      tag: 'logo_familia',
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.amber.withValues(alpha: 0.15),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.3), width: 2),
+                        ),
+                        child: const Icon(Icons.family_restroom, size: 56, color: Colors.amber),
                       ),
-                      child: const Icon(Icons.family_restroom, size: 56, color: Colors.amber),
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "¡Bienvenido!",
+                      "Misión Switch 2",
                       style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Configuremos la cuenta familiar",
+                      _step == -1 ? "¡Bienvenida Familia!" : (_isLoginFlow ? "Inicia sesión" : "Crea tu cuenta familiar"),
                       style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.6)),
                     ),
 
                     const SizedBox(height: 30),
 
-                    // Steps indicator
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _StepDot(label: "PIN", isActive: _step == 0, isDone: _step > 0),
-                        Container(width: 40, height: 2, color: _step > 0 ? Colors.amber : Colors.white24),
-                        _StepDot(label: "Hijo", isActive: _step == 1, isDone: false),
-                      ],
-                    ),
+                    if (_step == -1) 
+                      _buildChoiceStep()
+                    else ...[
+                      // Steps indicator (Solo en registro)
+                      if (!_isLoginFlow) 
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _StepDot(label: "Cuenta", isActive: _step == 0, isDone: _step > 0),
+                            _connector(_step > 0),
+                            _StepDot(label: "PIN", isActive: _step == 1, isDone: _step > 1),
+                            _connector(_step > 1),
+                            _StepDot(label: "Hijo", isActive: _step == 2, isDone: false),
+                          ],
+                        ),
 
-                    const SizedBox(height: 30),
+                      const SizedBox(height: 30),
 
-                    // Form Card
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 8))],
+                      // Form Card
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 8))],
+                        ),
+                        child: _isLoginFlow 
+                          ? _buildLoginStep() 
+                          : (_step == 0 ? _buildEmailStep() : (_step == 1 ? _buildPinStep() : _buildPerfilStep())),
                       ),
-                      child: _step == 0 ? _buildPinStep() : _buildPerfilStep(),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -92,6 +109,129 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _connector(bool active) => Container(width: 30, height: 2, color: active ? Colors.amber : Colors.white24);
+
+  Widget _buildChoiceStep() {
+    return Column(
+      children: [
+        _ChoiceCard(
+          title: "¡Comenzar Nueva Familia!",
+          subtitle: "Crea tu cuenta de administrador y los perfiles de tus hijos por primera vez.",
+          icon: Icons.rocket_launch,
+          color: Colors.amber,
+          onTap: () => setState(() { _step = 0; _isLoginFlow = false; }),
+        ),
+        const SizedBox(height: 20),
+        _ChoiceCard(
+          title: "Sincronizar mi Familia",
+          subtitle: "Ya tienes una cuenta en otro dispositivo. Ingresa para descargar tus datos.",
+          icon: Icons.cloud_download,
+          color: Colors.blue,
+          onTap: () => setState(() { _step = 0; _isLoginFlow = true; }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Inicia Sesión", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 8),
+        Text("Tus datos se descargarán automáticamente.", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+        const SizedBox(height: 20),
+        TextField(controller: _emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: "Correo Electrónico", prefixIcon: Icon(Icons.email))),
+        const SizedBox(height: 12),
+        TextField(controller: _passCtrl, obscureText: true, decoration: const InputDecoration(labelText: "Contraseña", prefixIcon: Icon(Icons.vpn_key))),
+        const SizedBox(height: 24),
+        if (_isCargando)
+          const Center(child: CircularProgressIndicator())
+        else ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+              onPressed: () async {
+                if (!_emailCtrl.text.contains('@') || _passCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ingresa tus credenciales")));
+                  return;
+                }
+                setState(() => _isCargando = true);
+                try {
+                  final authProv = Provider.of<AuthProvider>(context, listen: false);
+                  await authProv.loginPadre(_emailCtrl.text.trim(), _passCtrl.text);
+                  if (mounted) {
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                  }
+                } catch (e) {
+                  setState(() => _isCargando = false);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al entrar: ${e.toString()}"), backgroundColor: Colors.red));
+                  }
+                }
+              },
+              child: const Text("SINCRONIZAR Y ENTRAR ☁️", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton(
+              onPressed: () => setState(() => _step = -1),
+              child: const Text("← VOLVER ATRÁS", style: TextStyle(color: Colors.grey)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildEmailStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.indigo.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.account_circle, color: Colors.indigo),
+            ),
+            const SizedBox(width: 12),
+            const Text("Paso 1: Tu Cuenta", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text("Los datos se guardarán en la nube de forma segura.", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+        const SizedBox(height: 20),
+        TextField(controller: _emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: "Correo Electrónico", prefixIcon: Icon(Icons.email))),
+        const SizedBox(height: 12),
+        TextField(controller: _passCtrl, obscureText: true, decoration: const InputDecoration(labelText: "Crea una Contraseña", prefixIcon: Icon(Icons.vpn_key))),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(child: OutlinedButton(onPressed: () => setState(() => _step = -1), child: const Text("ATRÁS"))),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                onPressed: () {
+                  if (!_emailCtrl.text.contains('@') || _passCtrl.text.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Email inválido o contraseña corta (min 6)")));
+                    return;
+                  }
+                  setState(() => _step = 1);
+                },
+                child: const Text("SIGUIENTE →", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -107,33 +247,35 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
               child: const Icon(Icons.lock, color: Colors.indigo),
             ),
             const SizedBox(width: 12),
-            const Text("Crea tu PIN de Administrador", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Paso 2: PIN de Acceso", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         const SizedBox(height: 6),
-        Text("Solo los padres podrán acceder a la zona de control.", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+        Text("Para proteger tu panel de control local.", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
         const SizedBox(height: 20),
         TextField(controller: _pinCtrl, keyboardType: TextInputType.number, obscureText: true, decoration: const InputDecoration(labelText: "PIN (4 dígitos)", prefixIcon: Icon(Icons.password))),
         const SizedBox(height: 12),
         TextField(controller: _confirmPinCtrl, keyboardType: TextInputType.number, obscureText: true, decoration: const InputDecoration(labelText: "Confirmar PIN", prefixIcon: Icon(Icons.password))),
         const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
-            onPressed: () {
-              if (_pinCtrl.text.length < 4) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("El PIN debe tener al menos 4 dígitos")));
-                return;
-              }
-              if (_pinCtrl.text != _confirmPinCtrl.text) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Los PINs no coinciden")));
-                return;
-              }
-              setState(() => _step = 1);
-            },
-            child: const Text("SIGUIENTE →", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ),
+        Row(
+          children: [
+            Expanded(child: OutlinedButton(onPressed: () => setState(() => _step = 0), child: const Text("ATRÁS"))),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                onPressed: () {
+                  if (_pinCtrl.text.length < 4 || _pinCtrl.text != _confirmPinCtrl.text) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Revisa el PIN y su confirmación")));
+                    return;
+                  }
+                  setState(() => _step = 2);
+                },
+                child: const Text("SIGUIENTE →", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -151,7 +293,7 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
               child: const Icon(Icons.child_care, color: Colors.amber),
             ),
             const SizedBox(width: 12),
-            const Text("Perfil del Primer Hijo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Paso 3: Primer Perfil", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         const SizedBox(height: 20),
@@ -214,40 +356,104 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
         ),
 
         const SizedBox(height: 30),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => setState(() => _step = 0),
-                child: const Text("← ATRÁS"),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
-                onPressed: () async {
-                  if (_nombreHijoCtrl.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Escribe el nombre del niño")));
-                    return;
-                  }
-                  final authProv = Provider.of<AuthProvider>(context, listen: false);
-                  final perfilProv = Provider.of<PerfilesProvider>(context, listen: false);
+        if (_isCargando)
+          const Center(child: CircularProgressIndicator())
+        else
+          Row(
+            children: [
+              Expanded(child: OutlinedButton(onPressed: () => setState(() => _step = 1), child: const Text("ATRÁS"))),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  onPressed: () async {
+                    if (_nombreHijoCtrl.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Escribe el nombre del niño")));
+                      return;
+                    }
+                    setState(() => _isCargando = true);
+                    try {
+                      final authProv = Provider.of<AuthProvider>(context, listen: false);
+                      final perfilProv = Provider.of<PerfilesProvider>(context, listen: false);
 
-                  await authProv.registrarAdmin(_pinCtrl.text);
-                  await perfilProv.crearPerfil(nombre: _nombreHijoCtrl.text, tematica: _avatarSeleccionado, colorPrimario: _colorSeleccionado);
+                      await authProv.registrarAdmin(
+                        email: _emailCtrl.text.trim(),
+                        password: _passCtrl.text,
+                        pin: _pinCtrl.text,
+                      );
+                      
+                      await perfilProv.crearPerfil(
+                        nombre: _nombreHijoCtrl.text, 
+                        tematica: _avatarSeleccionado, 
+                        colorPrimario: _colorSeleccionado
+                      );
 
-                  if (mounted) {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
-                  }
-                },
-                child: const Text("COMENZAR 🚀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      if (mounted) {
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                      }
+                    } catch (e) {
+                      setState(() => _isCargando = false);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
+                      }
+                    }
+                  },
+                  child: const Text("CREAR CUENTA 🚀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
+    );
+  }
+}
+
+class _ChoiceCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ChoiceCard({required this.title, required this.subtitle, required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: FadeInUp(
+        duration: const Duration(milliseconds: 600),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                child: Icon(icon, color: color, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

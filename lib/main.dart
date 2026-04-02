@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'models/tarea_model.dart';
 import 'models/perfil_model.dart';
@@ -11,6 +12,7 @@ import 'ui/screens/seleccion_perfil_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await Hive.initFlutter();
   
   Hive.registerAdapter(TareaAdapter());
@@ -27,8 +29,14 @@ class MiAppTareas extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..inicializar()),
-        ChangeNotifierProvider(create: (_) => PerfilesProvider()..inicializar()),
-        ChangeNotifierProvider(create: (_) => TareaProvider()..inicializar()),
+        ChangeNotifierProxyProvider<AuthProvider, PerfilesProvider>(
+          create: (_) => PerfilesProvider(),
+          update: (_, auth, perfiles) => perfiles!..updateUid(auth.uid)..inicializar(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, TareaProvider>(
+          create: (_) => TareaProvider(),
+          update: (_, auth, tareas) => tareas!..updateUid(auth.uid)..inicializar(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
