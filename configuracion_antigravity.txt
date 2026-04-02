@@ -1,0 +1,22 @@
+Para configurar que Antigravity sea siempre directo y ahorre cuota sin que tengas que pedírselo en cada mensaje, debes usar las Custom Instructions (Instrucciones Personalizadas).
+Sigue estos pasos para configurarlo:
+
+1. Ubicación del ajuste
+Ve al panel de Settings (el icono de engranaje ⚙️) en la parte inferior izquierda de Antigravity.
+Busca la sección llamada "Agent Rules" o "Custom Instructions".
+
+Verás un cuadro de texto en blanco. Ahí es donde pegaremos las "reglas del juego".
+2. Qué pegar en el cuadro de texto
+Copia y pega este bloque exacto. Está optimizado para que el modelo sea breve y eficiente con tus tokens:
+text
+- Sé extremadamente conciso. No saludes ni des introducciones.
+- Antes de cada cambio importante, verifica si el "Implementation Plan" está actualizado.
+- Si detectas un error de compilación, detente y pide confirmación antes de intentar otra solución.
+- Prioriza el uso de código sobre explicaciones teóricas.
+- Si una tarea requiere múltiples archivos, resume el plan de acción en una lista de 3 puntos antes de empezar.
+Usa el código con precaución.
+
+3. Por qué esto te salva la cuota
+Elimina la "paja": Evitas pagar cuota por frases como "¡Claro! Estaré encantado de ayudarte con tu código de Python...".
+Corta el ciclo de errores: Al obligarlo a detenerse tras un error, evitas que entre en un bucle automático de "intento-fallo" que consume tus 5 horas de Sprint en minutos.
+Auto-sincronización: La regla de verificar el plan hace que el agente use sus propios procesos internos para no repetir tareas (las famosas letras U que ya vimos).

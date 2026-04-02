@@ -1,0 +1,23 @@
+Aquí tienes una lista de prompts cortos y directos que puedes copiar y pegar. Están diseñados para que el modelo entienda la orden de inmediato sin gastar tokens en "charla" innecesaria:
+
+
+1. Para sincronizar avances (Evita repetir trabajo)
+"Sync plan: marca lo completado y actualiza siguientes pasos según el código actual."
+
+Cuándo usarlo: Después de que el agente haya editado varios archivos o cuando veas muchas letras U o M en el explorador.
+
+2. Para corregir el rumbo (Si hay errores)
+"Pausa. Re-evalúa el plan basándote en este error y propón cambios antes de seguir."
+
+Cuándo usarlo: En cuanto veas un error de consola o compilación. Evita que el agente siga intentando soluciones que no funcionan y gaste tu cuota.
+
+3. Para ahorrar cuota en explicaciones
+"Solo código. Implementa [Tarea X] sin explicaciones detalladas."
+
+Cuándo usarlo: Cuando ya sabes qué hay que hacer y no necesitas que el agente te dé una clase de programación, solo que escriba el archivo.
+
+4. Para auditoría rápida de cuota
+"Resume el estado del proyecto y qué falta del plan actual en 3 puntos."
+
+Cuándo usarlo: Antes de cerrar sesión o cambiar de tarea, para tener claro dónde retomar sin que el agente analice todo el repositorio de nuevo.
+Tip Pro: Si el agente empieza a escribir una respuesta muy larga que no necesitas, dale al botón de "Stop" (el cuadrado pequeño) de inmediato. Detener una respuesta a la mitad ahorra cuota de salida que podrías usar después.

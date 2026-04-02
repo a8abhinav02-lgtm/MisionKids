@@ -1,66 +1,131 @@
-# Refactorización a Soporte Multiusuario (Local)
+# Refactorización Multiusuario + UX Premium
 
-El objetivo de esta fase es reestructurar la aplicación para hacerla sostenible (modularizando `main.dart`) y preparar la lógica para soportar **múltiples perfiles de niños**, permitiendo que cada uno tenga su propio saldo individual, historial de misiones y _tema personalizado_ guardado todo en local (Hive). Como acordamos, la integración con Firebase quedará aplazada hasta validar este modelo.
+## Resumen del Objetivo
 
-## User Review Required
-
-> [!WARNING]
-> El cambio al modelo multiusuario en local requerirá una **nueva definición de las cajas de Hive**. Para evitar conflictos de lectura, la mejor opción es comenzar con una base de datos limpia para los nuevos perfiles (borraremos la data de prueba actual `caja_tareas_v5` y `caja_config`). Necesito tu confirmación antes de proceder, para no borrar información de uso real si la hubiera.
-
-> [!TIP]
-> Respecto a la personalización de temas ("Niño o Niña"), usaremos paletas de colores y fuentes guardadas en la configuración de cada perfil, de modo que cada niño tenga su experiencia única (por ejemplo: colores azules/verdes, morados/naranjas, tema "espacial" o tema "aventura").
-
-## Proposed Changes
-
-La reestructuración abarca la mayoría de los archivos actuales. Separaremos Responsabilidades (Modelos, Proveedores de estado y UI).
+Reestructurar la aplicación **Misión Switch 2** para soportar múltiples perfiles de niños con temas personalizados, modularizar el código monolítico, y elevar la experiencia visual a un nivel premium. La integración con Firebase queda aplazada hasta validar todo en local.
 
 ---
 
-### UI (Pantallas y Widgets)
-
-#### [DELETE] [main.dart](file:///c:/Users/angel/josue_tareas/lib/main.dart) 
-(Será reemplazado por un archivo `main.dart` muy pequeño únicamente para inicializar el estado global, Hive, y las rutas).
-
-#### [NEW] [lib/ui/screens/seleccion_perfil_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/seleccion_perfil_screen.dart)
-Pantalla inicial tipo "Netflix" para elegir quién va a usar la app: Muestra un avatar para Josué, otro para su herman@, y un candado para "Padres".
-
-#### [NEW] [lib/ui/screens/home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart)
-El dashboard del niño, que reacciona al `AppTheme` asociado a su perfil específico.
-
-#### [NEW] [lib/ui/themes/app_theme.dart](file:///c:/Users/angel/josue_tareas/lib/ui/themes/app_theme.dart)
-Contendrá la definición centralizada de los temas. Propongo de inicio esquemas seleccionables desde la zona de padres cuando se crea el perfil.
-
----
+## Fase 1: Modularización y Modelo Multiusuario ✅ COMPLETADA
 
 ### Modelos de Datos (Hive)
 
-#### [NEW] [lib/models/perfil_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.dart)
-Modelo exclusivo para manejar un perfil (`id`, `nombre`, `avatarIcono`, `saldoActual`, `metaActual`, `temaPreferido`).
+#### [NEW] [perfil_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.dart)
+Modelo `Perfil` con campos: `id`, `nombre`, `tematica`, `colorPrimario`, `saldo`, `metaAhorro`, `nombreMeta`, `historialVictorias`. Cada hijo tiene su propio perfil con saldo y metas independientes.
 
-#### [MODIFY] [lib/models/tarea_model.dart](file:///c:/Users/angel/josue_tareas/lib/tarea_model.dart)
-Agregaremos un campo `perfilId` u organizaremos las tareas dentro del perfil, para que las de Josué no se mezclen con las de otro niño.
+#### [MODIFY] [tarea_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/tarea_model.dart)
+Se añadió el campo `perfilId` (HiveField 10) para vincular cada tarea a un niño específico. Adaptadores regenerados con `build_runner`.
 
 ---
 
-### Lógica (Proveedores)
+### Providers (Lógica separada por responsabilidad)
 
-#### [NEW] [lib/providers/perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart)
-Gestionará el CRUD de perfiles y la persistencia del perfil "Abierto actualmente".
+#### [NEW] [auth_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/auth_provider.dart)
+Maneja exclusivamente la autenticación del padre (PIN). Caja Hive independiente: `caja_auth_v2`.
 
-#### [MODIFY] [lib/providers/tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/tarea_provider.dart)
-Se extraerá de él toda la lógica financiera (`totalDinero`, `metaAhorro`) y se le pasará al `perfil_provider.dart`. El provider de tareas solo manejará Misiones, filtrándolas por `perfilId`.
+#### [NEW] [perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart)
+CRUD de perfiles de niños + gestión financiera por perfil (saldo, metas, historial de victorias, reclamar premios). Caja Hive: `caja_perfiles_v2`.
 
-## Open Questions
+#### [MODIFY] [tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/tarea_provider.dart)
+Depurado: ya no maneja finanzas ni autenticación. Todos los métodos filtran por `perfilId`. Caja Hive: `caja_tareas_v6`.
 
-1. **Borrado de Datos:** ¿Confirmas que estás de acuerdo con que los datos locales de prueba (tareas de `"josue"`) se borren o ignoren para poder migrar limpio la estructura de base de datos a múltiples hijos?
-2. **Temas / Avatares:** Al crear a un niño, ¿te gustaría que el padre seleccione simplemente entre opciones de colores (Azul, Rosa, Verde, etc.) o entre "Temáticas/Avatares" (Ej: Astronauta, Ninja, Princesa, Deportes)? ¿O simplemente Color de Fondo y Nombre?
+---
 
-## Verification Plan
+### Temas y Personalización
 
-### Manual Verification
-1. La aplicación inicia en la pantalla "Seleccionar Perfil".
-2. Sin perfiles, obligará a configurar al *Padre* (PIN de Seguridad).
-3. Entrar a Zona Admin y cargar 2 perfiles de niños (con temas de color distintos).
-4. Ver que en "Seleccionar Perfil" aparecen ambos.
-5. Si entramos al Perfil 1, el fondo será de su color y tendrá sus propias tareas. Al ganar puntos, se incrementa el saldo del Perfil 1.
-6. Si cambiamos al Perfil 2, este verá un saldo $0 inicial y un color de entorno completamente distinto.
+#### [NEW] [app_theme.dart](file:///c:/Users/angel/josue_tareas/lib/ui/themes/app_theme.dart)
+Motor de temas con:
+- **8 paletas de color** (azul, rojo, verde, morado, naranja, rosa, dorado, índigo)
+- **7 avatares temáticos** (Ninja, Astronauta, Princesa, Deportes, Estudiante, Héroe, Robot)
+- Métodos para gradientes (`getGradient`, `getDarkGradient`), ThemeData dinámico, y etiquetas legibles
+
+---
+
+## Fase 2: Modularización UI ✅ COMPLETADA
+
+El archivo `main.dart` original (760 líneas) fue eliminado y reemplazado por:
+
+#### [MODIFY] [main.dart](file:///c:/Users/angel/josue_tareas/lib/main.dart)
+Punto de entrada simplificado (~40 líneas). Solo inicializa Hive, registra adaptadores y configura `MultiProvider` con los 3 providers.
+
+#### [NEW] [seleccion_perfil_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/seleccion_perfil_screen.dart)
+Pantalla inicial tipo "Netflix" para elegir quién usa la app. Muestra avatares de los hijos y un botón para padres.
+
+#### [NEW] [setup_familia_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/setup_familia_screen.dart)
+Wizard de 2 pasos para la configuración inicial: (1) PIN del padre, (2) Perfil del primer hijo con avatar y color.
+
+#### [NEW] [home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart)
+Dashboard del niño con header adaptativo al color de su perfil, saldo, progreso de meta y lista de misiones por bloque horario.
+
+#### [NEW] [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)
+Panel de padres con tabs por cada hijo. Incluye resumen del perfil, aprobación de misiones, gestión de retos y sanciones.
+
+#### [NEW] [historial_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/historial_screen.dart)
+Tabs con logros del día y trofeos históricos, tematizado por el color del niño activo.
+
+#### [NEW] [formulario_perfil_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/formulario_perfil_screen.dart)
+Pantalla para agregar nuevos hijos desde el panel de padres (seleccionando nombre, avatar y color).
+
+#### [NEW] [formulario_tarea.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/formulario_tarea.dart)
+Widget reutilizable (BottomSheet) para crear/editar misiones con: plantillas rápidas, switch obligatoria, frecuencia (diaria/semanal/fecha fija), jornada, y selector de ícono.
+
+---
+
+## Fase 3: Rediseño UX/UI Premium ✅ COMPLETADA
+
+### Cambios aplicados:
+
+| Pantalla | Mejora |
+|---|---|
+| **Selección de Perfil** | Fondo degradado oscuro premium. Avatares con animación de pulso y sombra glow del color del niño. |
+| **Setup Familia** | Wizard con indicador de pasos visual. Selectores de avatar con etiquetas. Colores con check y glow animado. |
+| **Panel de Padres** | Header oscuro con gradientes. Botón "Agregar Hijo" prominente con gradiente azul brillante. Tabs con ícono del avatar + indicador de selección dorado con glow. Tarjeta resumen con gradiente del color del niño (saldo y meta integrados). Botones de acción rápida (Editar Reto / Multa). |
+| **Dashboard del Niño** | Header con gradiente del color del perfil. Saludo dinámico contextual ("Buenos días ☀️"). Tarjeta glassmorphic de saldo. Zona de misiones con fondo redondeado. Tarjetas de misión tapeables con InkWell y ícono `touch_app`. |
+| **Formulario de Tareas** | Recuperado con plantillas rápidas, switch obligatoria funcional, frecuencia, jornada y selector de íconos. |
+
+---
+
+## Fase 4: Integración con la Nube 🔜 PENDIENTE
+
+> [!IMPORTANT]
+> Esta fase se implementará **solo cuando todo lo anterior sea funcional y validado en local**, según lo acordado.
+
+### Cambios planificados:
+- Migrar almacenamiento de Hive (local) a **Firebase Firestore** (nube)
+- Sincronización en tiempo real entre dispositivos de la familia
+- Autenticación con Firebase Auth (reemplazar PIN local)
+- Notificaciones push para padre e hijos
+
+---
+
+## Estructura Actual del Proyecto
+
+```
+lib/
+├── main.dart                          # Entry point (~40 líneas)
+├── models/
+│   ├── perfil_model.dart              # Modelo Perfil (Hive typeId: 1)
+│   ├── perfil_model.g.dart            # Generado
+│   ├── tarea_model.dart               # Modelo Tarea (Hive typeId: 0)
+│   └── tarea_model.g.dart             # Generado
+├── providers/
+│   ├── auth_provider.dart             # Autenticación padre
+│   ├── perfiles_provider.dart         # CRUD perfiles + finanzas
+│   └── tarea_provider.dart            # CRUD tareas + flujo operativo
+└── ui/
+    ├── screens/
+    │   ├── admin_screen.dart          # Panel de padres (tabs por hijo)
+    │   ├── formulario_perfil_screen.dart  # Agregar nuevo hijo
+    │   ├── historial_screen.dart      # Trofeos y logros del día
+    │   ├── home_nino_screen.dart      # Dashboard del niño
+    │   ├── seleccion_perfil_screen.dart   # "¿Quién eres?"
+    │   └── setup_familia_screen.dart  # Wizard inicial (PIN + primer hijo)
+    ├── themes/
+    │   └── app_theme.dart             # Colores, avatares, gradientes, ThemeData
+    └── widgets/
+        └── formulario_tarea.dart      # BottomSheet crear/editar misión
+```
+
+## Rama Git
+
+Todos los cambios están en la rama `feature/refactor-multiusuario`, sin afectar `main`.
