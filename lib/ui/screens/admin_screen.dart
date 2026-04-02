@@ -21,8 +21,14 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final perfilesProv = Provider.of<PerfilesProvider>(context);
-    final tareaProv = Provider.of<TareaProvider>(context);
     final perfiles = perfilesProv.todosLosPerfiles;
+    final tareaProv = Provider.of<TareaProvider>(context);
+
+    if (perfilesProv.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+      );
+    }
 
     if (perfiles.isEmpty) {
       return Scaffold(

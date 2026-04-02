@@ -321,7 +321,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
 
           if (tarea.estaEnRevision) {
             colorCard = Colors.orange.shade50;
-            iconStatus = Icons.watch_later_rounded;
+            iconStatus = Icons.hourglass_bottom;
             colorStatus = Colors.orange;
           }
 

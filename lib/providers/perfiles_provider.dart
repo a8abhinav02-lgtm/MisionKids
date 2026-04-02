@@ -55,13 +55,28 @@ class PerfilesProvider extends ChangeNotifier {
 
   Future<void> _migrarHiveAFirestore() async {
     if (_uid.isEmpty || _cajaPerfiles == null) return;
+    
     final perfilesLocal = _cajaPerfiles!.values.toList();
-    if (perfilesLocal.isNotEmpty) {
-      for (var p in perfilesLocal) {
-        await _db.collection('familias').doc(_uid).collection('perfiles').doc(p.id).set(p.toMap());
+    if (perfilesLocal.isEmpty) return;
+
+    // Traemos los nombres que ya existen en Firestore para evitar duplicados
+    final snapshot = await _db.collection('familias').doc(_uid).collection('perfiles').get();
+    final perfilesEnNube = snapshot.docs.map((doc) => Perfil.fromMap(doc.data())).toList();
+
+    for (var pLocal in perfilesLocal) {
+      // ¿Existe ya un perfil con este nombre en la nube?
+      final coincidencia = perfilesEnNube.where(
+        (pNube) => pNube.nombre.trim().toLowerCase() == pLocal.nombre.trim().toLowerCase()
+      ).firstOrNull;
+
+      if (coincidencia != null) {
+        // Si existe, sincronizamos el ID local para que coincida con la nube
+        pLocal.id = coincidencia.id;
+        // Opcional: Actualizar el resto de campos locales si la nube es más reciente
+      } else {
+        // Si no existe, lo subimos con su ID actual
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(pLocal.id).set(pLocal.toMap());
       }
-      // Opcional: Limpiar Hive después de migrar
-      // await _cajaPerfiles!.clear();
     }
   }
 

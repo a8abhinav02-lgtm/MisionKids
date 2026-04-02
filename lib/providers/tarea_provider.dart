@@ -63,16 +63,33 @@ class TareaProvider extends ChangeNotifier {
 
   Future<void> _migrarHiveAFirestore() async {
     if (_uid.isEmpty || _cajaTareas == null) return;
+    
     final tareasLocales = _cajaTareas!.values.toList();
-    if (tareasLocales.isNotEmpty) {
-      for (var t in tareasLocales) {
+    if (tareasLocales.isEmpty) return;
+
+    // 1. Traer perfiles de Firestore para corregir IDs de perfil si es necesario
+    final perfilesSnapshot = await _db.collection('familias').doc(_uid).collection('perfiles').get();
+    final perfilesNube = perfilesSnapshot.docs.map((doc) => doc.data()).toList();
+
+    // 2. Traer tareas existentes en Firestore
+    final tareasSnapshot = await _db.collection('familias').doc(_uid).collection('tareas').get();
+    final tareasNube = tareasSnapshot.docs.map((doc) => Tarea.fromMap(doc.data())).toList();
+
+    for (var tLocal in tareasLocales) {
+      // ¿Existe ya una tarea idéntica (mismo nombre y perfil)?
+      // Primero, intentamos encontrar el perfil actual en la nube por nombre (caso de unificación)
+      // Buscamos el nombre del perfil original en Hive (necesitaríamos acceso a PerfilesProvider o al box de perfiles)
+      // Pero podemos simplificar: si el tLocal.id ya está en tareasNube, no hacemos nada.
+      
+      final existeEnNube = tareasNube.any((tn) => tn.id == tLocal.id || (tn.nombre == tLocal.nombre && tn.perfilId == tLocal.perfilId));
+
+      if (!existeEnNube) {
         // Generamos ID si no tiene
-        if (t.id.isEmpty) {
-          t.id = DateTime.now().millisecondsSinceEpoch.toString() + tareasLocales.indexOf(t).toString();
+        if (tLocal.id.isEmpty) {
+          tLocal.id = DateTime.now().millisecondsSinceEpoch.toString() + tareasLocales.indexOf(tLocal).toString();
         }
-        await _db.collection('familias').doc(_uid).collection('tareas').doc(t.id).set(t.toMap());
+        await _db.collection('familias').doc(_uid).collection('tareas').doc(tLocal.id).set(tLocal.toMap());
       }
-      // Opcional: await _cajaTareas!.clear();
     }
   }
 
