@@ -99,7 +99,7 @@ class TareaProvider extends ChangeNotifier {
 
     for (var tarea in _todasLasTareasData) {
       if (tarea.tipoRecurrencia != 'fecha_fija') {
-        if (tarea.ultimoDiaCompletado != hoyId && (tarea.estado == 'aprobada' || tarea.estado == 'revision')) {
+        if (tarea.ultimoDiaCompletado != hoyId && tarea.estado == 'aprobada') {
           tarea.estado = 'pendiente';
           huboCambio = true;
           if (_uid.isNotEmpty) {
