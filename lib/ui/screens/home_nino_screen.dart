@@ -343,6 +343,20 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: interactuable ? () {
+                  final perfilId = perfilesProv.perfilActivo?.id;
+                  if (perfilId != null && !tarea.esObligatoria && tareaProv.tieneObligatoriasPendientes(perfilId)) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("⚠️ ¡Primero envía a revisión tus llaves 🔑 obligatorias!"),
+                          backgroundColor: Colors.red,
+                          duration: Duration(seconds: 3),
+                        )
+                      );
+                    }
+                    return;
+                  }
+
                   _confettiController.play();
                   tareaProv.solicitarRevision(tarea);
                   if (context.mounted) {

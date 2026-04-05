@@ -327,6 +327,25 @@ class TareaProvider extends ChangeNotifier {
     }
   }
 
+  bool tieneObligatoriasPendientes(String perfilId) {
+    final tareasHoy = listaTareasActivas(perfilId);
+    final bloque = bloqueActual;
+    
+    final bloquesSecuencia = ['manana', 'tarde', 'noche'];
+    final indiceActual = bloquesSecuencia.indexOf(bloque);
+
+    return tareasHoy.any((t) {
+      if (!t.esObligatoria) return false;
+      if (t.estado != 'pendiente') return false; // Si ya se envió a revisión o se aprobó, cuenta como hecha por el niño
+
+      final indiceTarea = bloquesSecuencia.indexOf(t.bloque);
+      if (indiceTarea == -1) return false;
+
+      // Bloquear si hay una obligatoria pendiente del bloque actual o de los anteriores
+      return indiceTarea <= indiceActual;
+    });
+  }
+
   String get bloqueActual {
     final hora = DateTime.now().hour;
     if (hora >= 5 && hora < 12) return 'manana';
