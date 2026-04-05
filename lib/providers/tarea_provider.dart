@@ -96,19 +96,26 @@ class TareaProvider extends ChangeNotifier {
   void _verificarNuevoDia() {
     final hoyId = _fechaIdHoy;
     bool huboCambio = false;
+    WriteBatch? batch;
+    if (_uid.isNotEmpty) batch = _db.batch();
 
     for (var tarea in _todasLasTareasData) {
       if (tarea.tipoRecurrencia != 'fecha_fija') {
         if (tarea.ultimoDiaCompletado != hoyId && tarea.estado == 'aprobada') {
           tarea.estado = 'pendiente';
           huboCambio = true;
-          if (_uid.isNotEmpty) {
-            _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({'estado': 'pendiente'});
+          if (_uid.isNotEmpty && batch != null) {
+            final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
+            batch.update(docRef, {'estado': 'pendiente'});
           } else {
             tarea.save();
           }
         }
       }
+    }
+    
+    if (batch != null && huboCambio) {
+      batch.commit();
     }
     if (huboCambio) notifyListeners();
   }
@@ -254,38 +261,70 @@ class TareaProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool aprobarTarea(Tarea tarea) {
+  Future<bool> aprobarTarea(Tarea tarea) async {
     if (tarea.estado == 'revision') {
-      tarea.estado = 'aprobada';
-      tarea.ultimoDiaCompletado = _fechaIdHoy;
       if (_uid.isNotEmpty) {
-        _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({
-          'estado': 'aprobada',
-          'ultimoDiaCompletado': _fechaIdHoy,
-        });
+        final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
+        try {
+          return await _db.runTransaction((transaction) async {
+            final snapshot = await transaction.get(docRef);
+            if (!snapshot.exists) return false;
+            final data = snapshot.data()!;
+            if (data['estado'] == 'revision') {
+              transaction.update(docRef, {
+                'estado': 'aprobada',
+                'ultimoDiaCompletado': _fechaIdHoy,
+              });
+              return true;
+            }
+            return false;
+          });
+        } catch (e) {
+          return false;
+        }
       } else {
-        tarea.save();
+        tarea.estado = 'aprobada';
+        tarea.ultimoDiaCompletado = _fechaIdHoy;
+        await tarea.save();
+        notifyListeners();
+        return true;
       }
-      notifyListeners();
-      return true;
     }
     return false;
   }
   
-  bool aprobarTareaManual(Tarea tarea) {
+  Future<bool> aprobarTareaManual(Tarea tarea) async {
     bool yaEstabaPagada = (tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == _fechaIdHoy);
-    tarea.estado = 'aprobada';
-    tarea.ultimoDiaCompletado = _fechaIdHoy;
     if (_uid.isNotEmpty) {
-      _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id).update({
-        'estado': 'aprobada',
-        'ultimoDiaCompletado': _fechaIdHoy,
-      });
+      final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
+      try {
+        return await _db.runTransaction((transaction) async {
+          final snapshot = await transaction.get(docRef);
+          if (!snapshot.exists) return false;
+          final data = snapshot.data()!;
+          bool pagadaNube = (data['estado'] == 'aprobada' && data['ultimoDiaCompletado'] == _fechaIdHoy);
+          if (!pagadaNube) {
+            transaction.update(docRef, {
+              'estado': 'aprobada',
+              'ultimoDiaCompletado': _fechaIdHoy,
+            });
+            return true;
+          }
+          return false;
+        });
+      } catch (e) {
+        return false;
+      }
     } else {
-      tarea.save();
+      if (!yaEstabaPagada) {
+        tarea.estado = 'aprobada';
+        tarea.ultimoDiaCompletado = _fechaIdHoy;
+        await tarea.save();
+        notifyListeners();
+        return true;
+      }
+      return false;
     }
-    notifyListeners();
-    return !yaEstabaPagada;
   }
 
   String get bloqueActual {

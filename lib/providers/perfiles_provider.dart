@@ -147,7 +147,7 @@ class PerfilesProvider extends ChangeNotifier {
     perfil.saldo += cantidad;
 
     if (_uid.isNotEmpty) {
-      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({'saldo': perfil.saldo});
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({'saldo': FieldValue.increment(cantidad)});
     } else {
       await perfil.save();
     }
@@ -192,7 +192,12 @@ class PerfilesProvider extends ChangeNotifier {
       perfil.nombreMeta = '';
 
       if (_uid.isNotEmpty) {
-        await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update(perfil.toMap());
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+          'saldo': FieldValue.increment(-costoMeta),
+          'historialVictorias': historial,
+          'metaAhorro': 0.0,
+          'nombreMeta': '',
+        });
       } else {
         await perfil.save();
       }

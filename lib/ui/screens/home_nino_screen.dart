@@ -325,7 +325,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
             colorStatus = Colors.orange;
           }
 
-          bool interactuable = tarea.estaPendiente;
+          bool interactuable = tarea.estaPendiente && esBloqueActivo;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),

@@ -335,8 +335,9 @@ class _TabAdminPerfil extends StatelessWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.check_circle, color: Colors.green, size: 32),
-                            onPressed: () {
-                              if (tareaProv.aprobarTarea(tarea)) {
+                            onPressed: () async {
+                              final success = await tareaProv.aprobarTarea(tarea);
+                              if (success) {
                                 perfilesProv.agregarDinero(perfil.id, tarea.puntos);
                               }
                             },
@@ -411,6 +412,22 @@ class _TabAdminPerfil extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22), 
+                  onPressed: () async {
+                    final success = await tareaProv.aprobarTareaManual(tarea);
+                    if (success) {
+                      perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados.")));
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ya estaba aprobada hoy.")));
+                      }
+                    }
+                  }
+                ),
                 IconButton(icon: Icon(Icons.edit_rounded, color: color, size: 22), onPressed: () => _mostrarDialogoTarea(context, tarea)),
                 IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), onPressed: () => tareaProv.eliminarTarea(tarea)),
               ],
