@@ -1,22 +1,19 @@
-# Checklist del Proyecto: Finalizado ✅
+# Checklist Operativo: Fase de Refactorización y Lógica Final ✅
 
 ## Fase 4: Integración Firebase Cloud ✅
 - [x] Registro e Inicio de sesión de padres.
-- [x] Vinculación de perfiles locales a la nube.
-- [x] Migración automática de Hive a Firestore.
 - [x] Sincronización bidireccional en tiempo real.
 - [x] Unificación de IDs por nombre entre dispositivos.
 
-## Correcciones Críticas (UX/Bugfixes) ✅
-- [x] Icono de Reloj de Arena restaurado y persistente.
-- [x] Feedback de Confeti en todas las misiones.
-- [x] Notificaciones SnackBar para confirmación de envío.
-- [x] Corrección de `_verificarNuevoDia()` (reseteo prematuro).
+## Fase 5: Reglas Dinámicas de Tareas ✅
+- [x] Implementar limitación por franja horaria (niños solo envían en su bloque activo).
+- [x] Limitar interacción de misiones opcionales por responsabilidades previas o actuales.
+- [x] Preservar libertad administrativa del padre (aprobar vencidas o anticipadas).
 
-## Administrativo ✅
+## Fase 6: Cierre Requerimientos Adicionales ✅
+- [x] Avisos de rechazo SnackBar (⚠️ ¡Primero envía a revisión tus llaves 🔑 obligatorias!).
 - [x] Sync Plan de Implementación.
 - [x] Sync Walkthrough final.
 - [x] Sync Análisis de Hábitos.
-- [x] Git Push total a GitHub.
 
-**Estado del proyecto:** 🏁 100% de objetivos cumplidos.
+**Estado del proyecto:** 🏁 100% de objetivos cumplidos, entrando en fase oficial de Testeo.

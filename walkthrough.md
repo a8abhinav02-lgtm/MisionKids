@@ -1,37 +1,37 @@
-# Recapitulando la Transformación Cloud: Misión Switch 2 🏁
+# Visita Guiada Final: Misión Switch 2 (Reglas y Bloqueos de Comportamiento) 🏁
 
-Tras varias iteraciones, hemos logrado una base técnica sólida y profesional para tu aplicación de hábitos familiares.
-
----
-
-## 🛠️ Hitos Técnicos de la Fase Final
-
-### 1. Sincronización Robusta (Firestore Live)
-- **Unificación de Identidad**: Ahora el padre y el hijo pueden iniciar sesión en teléfonos distintos y la App "unifica" los perfiles por su nombre. Esto resolvió el problema de que el padre no viera las tareas enviadas.
-- **Reloj de Arena Persistente**: Corregimos el bug crítico en `_verificarNuevoDia()` que reseteaba prematuramente las tareas en revisión. Ahora, el niño ve su reloj de arena fijo hasta que tú, como padre, tomas una acción.
-- **Feedback SnackBar**: Añadimos mensajes de confirmación visual para que el niño sepa exactamente cuándo su misión ha sido enviada para revisión.
-
-### 2. Arquitectura de Datos Unificada
-- Transición total de un esquema local (`Hive`) a un esquema de nube (`Firestore`).
-- El `TareaProvider` y el `PerfilesProvider` ahora son 100% reactivos a los cambios que ocurran en cualquier dispositivo de la familia.
-
-### 3. Roles y Seguridad
-- Acceso parental protegido mediante PIN y cuenta de Firebase.
-- Perfiles de niños independientes con sus propios avatares, colores y saldos.
+Hemos finalizado la estructura de comportamiento de la aplicación. Tu proyecto ahora piensa como un "padre digital condicional", aplicando restricciones diseñadas para educar al niño.
 
 ---
 
-## 🎨 Resumen del Flujo UX Actual (Verificado)
+## 🛠️ Reglas Aplicadas (Probadas y Activas)
 
-- **Niño**: Pulsa una misión -> Confeti 🎉 -> Mensaje "Enviado 🕒" -> Aparece Reloj de Arena ⏳ (Fijo).
-- **Padre**: Abre el panel Admin -> Ve la misión en la sección "Esperando Aprobación" -> Pulsa Check -> Se libera el premio.
+### 1. Cuadro Horario ("Solo en el Presedente")
+- El niño **ahora está restringido** al bloque horario del momento. 
+- *Ejemplo:* Si son las 2:00 PM, el bloque activo es `"tarde"`. Las misiones de la mañana se ven grises y apagadas, y las de la noche aún no se encienden. Un niño no puede marcar como "hecha" su obligación de bañarse de la mañana a las 3:00 PM.
+- El **Padre** no experimenta este bloqueo. El panel de administrador puede dar checks, revisar y sancionar a cualquier hora.
+
+### 2. Bloqueador "Primero lo Obligatorio"
+- Tu solicitud: *¿Si no hace las llaves, no puede ganar los puntos?* Sí.
+- **Funcionamiento exacto:** El sistema vigila el estado de las tareas de la `mañana` y de la `tarde` actuales. Si el niño no ha presionado y enviado a revisión su tarea *Obligatoria*, ningún botón que otorgue puntos (🤑) funcionará en su panel.
+- Una alarma roja saltará pidiéndole que atienda su responsabilidad.
 
 ---
 
-## ☁️ Estado de Producción y GitHub
+## 🎨 Resumen del Flujo UX Actual
 
-Todo el código fuente final ha sido sincronizado en:
-- **Rama Actual**: `feature/refactor-multiusuario`.
-- **Commits**: Incluyen todas las correcciones de sincronización, logos y lógica de fechas.
+1. **Niño**:
+    * Intenta pulsar misión de puntos **sin** haber completado obligatoria -> ⚠️ *Alerta roja, denegado.*
+    * Pulsa misión obligatoria (Llave 🔑) de su bloque actual -> 🎉 *Confeti, SnackBar verde de envío, Reloj Fijo.*
+    * Pulsa misión de puntos -> 🎉 *Confeti, enviado con éxito.*
+2. **Padre**: 
+    * Abre el panel Admin -> Ignora restricciones de tiempo -> Revisa las acciones del niño en "Aprobaciones" -> Pulsa Check para validar.
 
-**¡Misión Switch 2 está lista para su despliegue final!** 🚀
+---
+
+## ☁️ Repositorio y Entorno
+
+Todo el código fuente cuenta con respaldo y sincronización:
+- **Git** rama: `feature/refactor-multiusuario`.
+
+**Con todo esto documentado, la fase oficial de BETA y TESTEO en casa está declarada como abierta.**
