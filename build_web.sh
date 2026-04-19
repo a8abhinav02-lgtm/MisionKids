@@ -13,6 +13,6 @@ echo "--- Verificando instalación ---"
 flutter doctor
 
 echo "--- Construyendo aplicación Web ---"
-flutter build web --release
+flutter build web --release --no-tree-shake-icons
 
 echo "--- Construcción finalizada con éxito ---"
