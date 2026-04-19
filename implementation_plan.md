@@ -1,8 +1,8 @@
-# Proyecto: Misión Switch 2 (Consolidación de Fase de Testeo) 🚀
+# Proyecto: Mission Kids 🚀 (Anteriormente Misión Switch 2)
 
-Este proyecto ha logrado transformar una aplicación local en una plataforma en la nube sincronizada en tiempo real, implementando rigurosas reglas de negocio para el flujo de tareas.
+Este proyecto ha logrado transformar una aplicación local en una plataforma en la nube sincronizada en tiempo real, con una arquitectura lista para la web y reglas de negocio sólidas.
 
-## Hitos Logrados (Fase 4 & Flujo Operativo) ✅
+## Hitos Logrados ✅
 
 ### 1. Sistema de Autorización y Nube (Firebase) ✅
 - **Auth**: Registro e Inicio de Sesión de padres mediante PIN.
@@ -10,19 +10,20 @@ Este proyecto ha logrado transformar una aplicación local en una plataforma en 
 - **Unificación de Identidad**: Vinculación eficiente de perfiles por nombre entre dispositivos.
 
 ### 2. Normativas de Interacción y Flujo de Tareas ✅
-- **Activación por Franja Horaria**: El niño solo puede interactuar con las misiones que pertenecen al bloque horario actual (Mañana, Tarde, Noche).
-- **Inactivación de Misiones Pasadas**: Las tareas de bloques pasados o futuros se muestran pero están congeladas para el perfil de hijo.
-- **Aprobación Extendida (Padre)**: El padre mantiene privilegios de admin, pudiendo aprobar tareas de cualquier franja y fecha desde su panel.
+- **Activación por Franja Horaria**: Restricción según el bloque horario actual (Mañana, Tarde, Noche).
+- **Bloqueo "Deber antes que Puntos"**: Se impide enviar misiones de puntos si hay "Llaves 🔑" obligatorias pendientes.
+- **Aprobación Admin**: Libertad total para el administrador desde cualquier lugar.
 
-### 3. Condiciones de Gamificación (Puntos vs Obligaciones) ✅
-- **Bloqueo Inteligente**: Se impide que el niño envíe a revisión misiones de puntos opcionales si mantiene deudas de misiones obligatorias (Llaves 🔑) en el bloque actual o en los pasados del día.
-- Se implementó un aviso `SnackBar` rojo para educar e incentivar el cumplimiento de los deberes.
+### 3. Despliegue Web y Branding ✅
+- **Rebrand**: Cambio exitoso de nombre a "Mission Kids".
+- **Cloudflare Pages**: Despliegue automatizado vía GitHub con script de construcción custom (`build_web.sh`).
+- **PWA**: Configurado para funcionar como una aplicación instalable en móviles desde el navegador.
 
 ---
 
-## Próximos pasos sugeridos post-testeo
-- Testeo de latencia de red bajo conexiones inestables.
-- Implementación de notificaciones push Cloud Messaging (FCM).
-- Tienda de recompensas secundarias.
+## 🧪 Fase Actual: Testeo y Verificación
+- Verificación de sincronización en vivo entre versión Web y Android.
+- Validación de flujos de aprobación en tiempo real.
+- Pruebas de experiencia de usuario (UX) para niños.
 
-**Estado del repositorio:** 100% Sincronizado en `feature/refactor-multiusuario`.
+**Rama de producción:** `main` (Sincronizada con Cloudflare).

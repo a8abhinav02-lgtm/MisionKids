@@ -1,37 +1,37 @@
-# Visita Guiada Final: Misión Switch 2 (Reglas y Bloqueos de Comportamiento) 🏁
+# Visita Guiada Final: Mission Kids 🏁
 
-Hemos finalizado la estructura de comportamiento de la aplicación. Tu proyecto ahora piensa como un "padre digital condicional", aplicando restricciones diseñadas para educar al niño.
-
----
-
-## 🛠️ Reglas Aplicadas (Probadas y Activas)
-
-### 1. Cuadro Horario ("Solo en el Presedente")
-- El niño **ahora está restringido** al bloque horario del momento. 
-- *Ejemplo:* Si son las 2:00 PM, el bloque activo es `"tarde"`. Las misiones de la mañana se ven grises y apagadas, y las de la noche aún no se encienden. Un niño no puede marcar como "hecha" su obligación de bañarse de la mañana a las 3:00 PM.
-- El **Padre** no experimenta este bloqueo. El panel de administrador puede dar checks, revisar y sancionar a cualquier hora.
-
-### 2. Bloqueador "Primero lo Obligatorio"
-- Tu solicitud: *¿Si no hace las llaves, no puede ganar los puntos?* Sí.
-- **Funcionamiento exacto:** El sistema vigila el estado de las tareas de la `mañana` y de la `tarde` actuales. Si el niño no ha presionado y enviado a revisión su tarea *Obligatoria*, ningún botón que otorgue puntos (🤑) funcionará en su panel.
-- Una alarma roja saltará pidiéndole que atienda su responsabilidad.
+Esta aplicación ha sido diseñada para fomentar la autonomía y responsabilidad de los niños mediante un sistema de gamificación en la nube.
 
 ---
 
-## 🎨 Resumen del Flujo UX Actual
+## 🛠️ Cómo funciona ahora (Version Web/Cloud)
 
-1. **Niño**:
-    * Intenta pulsar misión de puntos **sin** haber completado obligatoria -> ⚠️ *Alerta roja, denegado.*
-    * Pulsa misión obligatoria (Llave 🔑) de su bloque actual -> 🎉 *Confeti, SnackBar verde de envío, Reloj Fijo.*
-    * Pulsa misión de puntos -> 🎉 *Confeti, enviado con éxito.*
-2. **Padre**: 
-    * Abre el panel Admin -> Ignora restricciones de tiempo -> Revisa las acciones del niño en "Aprobaciones" -> Pulsa Check para validar.
+### 1. Acceso Universal
+- La aplicación está desplegada en **Cloudflare Pages**. Puedes acceder desde cualquier navegador en computadora, tablet o móvil.
+- **PWA**: Si entras desde un móvil, puedes darle a "Compartir" -> "Agregar a inicio" para que se instale como una App nativa con el icono de Mission Kids.
+
+### 2. Sincronización Real
+- Todo lo que un niño hace en su perfil se ve reflejado **instantáneamente** en el panel del administrador (padre).
+- Si el padre aprueba una tarea, el saldo del niño se actualiza de inmediato aunque estén en dispositivos distintos.
+
+### 3. Reglas de Misiones
+- **Bloqueo de Franja**: Los niños solo pueden marcar tareas en su horario actual (Mañana/Tarde/Noche).
+- **El Deber es Primero**: Las misiones de puntos están bloqueadas si hay misiones obligatorias (iconos de llave 🔑) pendientes en el bloque actual o anteriores.
 
 ---
 
-## ☁️ Repositorio y Entorno
+## 👨‍👩‍👧‍👦 Flujo Recomendado para Padres
 
-Todo el código fuente cuenta con respaldo y sincronización:
-- **Git** rama: `feature/refactor-multiusuario`.
+1.  **Configurar Familias**: Al iniciar, el administrador crea la cuenta con un PIN.
+2.  **Crear Misiones**: Desde el panel de Admin, crea tareas diarias o semanales. Marca las responsabilidades críticas como "Obligatorias".
+3.  **Seguir el Progreso**: Revisa la sección de "Aprobaciones" para ver las misiones enviadas por los niños.
+4.  **Consolidar Puntos**: Una vez aprobadas, los puntos se suman al saldo del niño para ser canjeados por metas reales (ej: Nintendo Switch).
 
-**Con todo esto documentado, la fase oficial de BETA y TESTEO en casa está declarada como abierta.**
+---
+
+## 🚀 Despliegue Técnico
+- **Repo**: Sincronizado en `main`.
+- **Hosting**: Cloudflare Pages vinculado a GitHub.
+- **Back-end**: Firebase (Auth + Firestore).
+
+**¡La aplicación está lista para que Mission Kids comience su gran aventura!**
