@@ -43,7 +43,7 @@ class MiAppTareas extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Misión Switch 2 (Familia)',
+        title: 'Mission Kids (Familia)',
         theme: ThemeData(
           primarySwatch: Colors.indigo,
           scaffoldBackgroundColor: const Color(0xFFF0F4F8),

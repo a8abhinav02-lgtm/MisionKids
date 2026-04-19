@@ -60,7 +60,7 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Misión Switch 2",
+                      "Mission Kids",
                       style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1),
                     ),
                     const SizedBox(height: 8),

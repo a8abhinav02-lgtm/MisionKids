@@ -1,11 +1,11 @@
 {
-    "name": "josue_tareas",
-    "short_name": "josue_tareas",
+    "name": "Mission Kids",
+    "short_name": "Mission Kids",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Family Task Management System",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
