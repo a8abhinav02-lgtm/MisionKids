@@ -387,53 +387,100 @@ class _TabAdminPerfil extends StatelessWidget {
             ),
           ),
 
-        ...todasLasTareas.map((tarea) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            leading: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(tarea.icono, color: color, size: 22),
-            ),
-            title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            subtitle: Text(
-              "${_bloqueLabel(tarea.bloque)} • ${tarea.esObligatoria ? '🔑 Obligatoria' : '💰 ${tarea.puntos} pts'}",
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22), 
-                  onPressed: () async {
-                    final success = await tareaProv.aprobarTareaManual(tarea);
-                    if (success) {
-                      perfilesProv.agregarDinero(perfil.id, tarea.puntos);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados.")));
-                      }
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ya estaba aprobada hoy.")));
-                      }
-                    }
-                  }
-                ),
-                IconButton(icon: Icon(Icons.edit_rounded, color: color, size: 22), onPressed: () => _mostrarDialogoTarea(context, tarea)),
-                IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), onPressed: () => tareaProv.eliminarTarea(tarea)),
-              ],
-            ),
-          ),
-        )),
+        // MISIONES EXISTENTES AGRUPADAS
+        Builder(
+          builder: (context) {
+            final Map<String, List<Tarea>> tareasAgrupadas = {};
+            for (var tarea in todasLasTareas) {
+              if (!tareasAgrupadas.containsKey(tarea.nombre)) {
+                tareasAgrupadas[tarea.nombre] = [];
+              }
+              tareasAgrupadas[tarea.nombre]!.add(tarea);
+            }
+
+            final nombresOrdenados = tareasAgrupadas.keys.toList()..sort();
+            final bloqueOrder = {'manana': 0, 'tarde': 1, 'noche': 2};
+
+            return Column(
+              children: nombresOrdenados.map((nombreGrupo) {
+                final tareasDelGrupo = tareasAgrupadas[nombreGrupo]!;
+                tareasDelGrupo.sort((a, b) => (bloqueOrder[a.bloque] ?? 3).compareTo(bloqueOrder[b.bloque] ?? 3));
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 24, top: 16, bottom: 8),
+                      child: Text(
+                        nombreGrupo.toUpperCase(),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: color.shade700, fontSize: 13, letterSpacing: 1.2),
+                      ),
+                    ),
+                    ...tareasDelGrupo.map((tarea) {
+                      final esAprobada = tarea.ultimoDiaCompletado == tareaProv.fechaIdHoy;
+
+                      return Opacity(
+                        opacity: esAprobada ? 0.4 : 1.0,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: esAprobada ? 0.05 : 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(tarea.icono, color: esAprobada ? Colors.grey : color, size: 22),
+                            ),
+                            title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                            subtitle: Text(
+                              "${_bloqueLabel(tarea.bloque)} • ${tarea.esObligatoria ? '🔑 Obligatoria' : '💰 ${tarea.puntos} pts'}",
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                            ),
+                            trailing: esAprobada
+                              ? const Padding(
+                                  padding: EdgeInsets.only(right: 16),
+                                  child: Icon(Icons.check_circle, color: Colors.green, size: 28),
+                                )
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22), 
+                                      onPressed: () async {
+                                        final success = await tareaProv.aprobarTareaManual(tarea);
+                                        if (success) {
+                                          perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados.")));
+                                          }
+                                        } else {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ya estaba aprobada hoy.")));
+                                          }
+                                        }
+                                      }
+                                    ),
+                                    IconButton(icon: Icon(Icons.edit_rounded, color: color, size: 22), onPressed: () => _mostrarDialogoTarea(context, tarea)),
+                                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), onPressed: () => tareaProv.eliminarTarea(tarea)),
+                                  ],
+                                ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                );
+              }).toList(),
+            );
+          }
+        ),
       ],
     );
   }

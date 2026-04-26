@@ -9,6 +9,7 @@ import 'models/perfil_model.dart';
 import 'providers/auth_provider.dart';
 import 'providers/perfiles_provider.dart';
 import 'providers/tarea_provider.dart';
+import 'services/reminder_service.dart';
 import 'ui/screens/seleccion_perfil_screen.dart';
 
 void main() async {
@@ -41,16 +42,19 @@ class MiAppTareas extends StatelessWidget {
           update: (_, auth, tareas) => tareas!..updateUid(auth.uid)..inicializar(),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Mission Kids (Familia)',
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          scaffoldBackgroundColor: const Color(0xFFF0F4F8),
-          useMaterial3: true,
-          fontFamily: 'Roboto',
+      child: ReminderService(
+        child: MaterialApp(
+          scaffoldMessengerKey: scaffoldMessengerKey,
+          debugShowCheckedModeBanner: false,
+          title: 'Mission Kids (Familia)',
+          theme: ThemeData(
+            primarySwatch: Colors.indigo,
+            scaffoldBackgroundColor: const Color(0xFFF0F4F8),
+            useMaterial3: true,
+            fontFamily: 'Roboto',
+          ),
+          home: const SeleccionPerfilScreen(),
         ),
-        home: const SeleccionPerfilScreen(),
       ),
     );
   }

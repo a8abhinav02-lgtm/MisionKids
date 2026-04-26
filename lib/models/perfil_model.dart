@@ -28,6 +28,9 @@ class Perfil extends HiveObject {
   @HiveField(7)
   List<Map<dynamic, dynamic>> historialVictorias;
 
+  @HiveField(8)
+  int frecuenciaRecordatorio; // En minutos, por defecto 10
+
   Perfil({
     required this.id,
     required this.nombre,
@@ -37,6 +40,7 @@ class Perfil extends HiveObject {
     this.metaAhorro = 0.0,
     this.nombreMeta = '',
     this.historialVictorias = const [],
+    this.frecuenciaRecordatorio = 10,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +53,7 @@ class Perfil extends HiveObject {
       'metaAhorro': metaAhorro,
       'nombreMeta': nombreMeta,
       'historialVictorias': historialVictorias,
+      'frecuenciaRecordatorio': frecuenciaRecordatorio,
     };
   }
 
@@ -62,6 +67,7 @@ class Perfil extends HiveObject {
       metaAhorro: (map['metaAhorro'] as num?)?.toDouble() ?? 0.0,
       nombreMeta: map['nombreMeta'] ?? '',
       historialVictorias: List<Map<dynamic, dynamic>>.from(map['historialVictorias'] ?? []),
+      frecuenciaRecordatorio: (map['frecuenciaRecordatorio'] as num?)?.toInt() ?? 10,
     );
   }
 }

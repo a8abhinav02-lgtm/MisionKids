@@ -27,13 +27,14 @@ class PerfilAdapter extends TypeAdapter<Perfil> {
       historialVictorias: (fields[7] as List)
           .map((dynamic e) => (e as Map).cast<dynamic, dynamic>())
           .toList(),
+      frecuenciaRecordatorio: fields[8] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, Perfil obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -49,7 +50,9 @@ class PerfilAdapter extends TypeAdapter<Perfil> {
       ..writeByte(6)
       ..write(obj.nombreMeta)
       ..writeByte(7)
-      ..write(obj.historialVictorias);
+      ..write(obj.historialVictorias)
+      ..writeByte(8)
+      ..write(obj.frecuenciaRecordatorio);
   }
 
   @override

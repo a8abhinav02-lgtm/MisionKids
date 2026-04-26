@@ -12,7 +12,7 @@ class TareaProvider extends ChangeNotifier {
   String _uid = '';
   List<Tarea> _tareasFirestore = [];
 
-  int get _fechaIdHoy {
+  int get fechaIdHoy {
     final now = DateTime.now();
     return (now.year * 10000) + (now.month * 100) + now.day;
   }
@@ -94,7 +94,7 @@ class TareaProvider extends ChangeNotifier {
   }
 
   void _verificarNuevoDia() {
-    final hoyId = _fechaIdHoy;
+    final hoyId = fechaIdHoy;
     bool huboCambio = false;
     WriteBatch? batch;
     if (_uid.isNotEmpty) batch = _db.batch();
@@ -128,7 +128,7 @@ class TareaProvider extends ChangeNotifier {
     final tareasDeHoy = _filtrarTareasPorFecha(_tareasDelPerfil(perfilId), DateTime.now());
     return tareasDeHoy.where((t) {
       if (t.bloque == 'sancion') return false;
-      bool completadaHoy = (t.estado == 'aprobada' && t.ultimoDiaCompletado == _fechaIdHoy);
+      bool completadaHoy = (t.estado == 'aprobada' && t.ultimoDiaCompletado == fechaIdHoy);
       return !completadaHoy;
     }).toList();
   }
@@ -152,7 +152,7 @@ class TareaProvider extends ChangeNotifier {
 
   List<Tarea> listaHistorialHoy(String perfilId) {
     return _tareasDelPerfil(perfilId).where((t) {
-      bool esDeHoy = t.ultimoDiaCompletado == _fechaIdHoy;
+      bool esDeHoy = t.ultimoDiaCompletado == fechaIdHoy;
       bool estaAprobada = t.estado == 'aprobada';
       return esDeHoy && estaAprobada;
     }).toList();
@@ -227,7 +227,7 @@ class TareaProvider extends ChangeNotifier {
       nombre: "Sanción: $motivo", puntos: -monto, esObligatoria: false,
       iconoCodePoint: Icons.warning_amber_rounded.codePoint, bloque: 'sancion',
       estado: 'aprobada', tipoRecurrencia: 'fecha_fija', fechaEspecifica: DateTime.now(),
-      ultimoDiaCompletado: _fechaIdHoy, perfilId: perfilId,
+      ultimoDiaCompletado: fechaIdHoy, perfilId: perfilId,
     );
     
     if (_uid.isNotEmpty) {
@@ -273,7 +273,7 @@ class TareaProvider extends ChangeNotifier {
             if (data['estado'] == 'revision') {
               transaction.update(docRef, {
                 'estado': 'aprobada',
-                'ultimoDiaCompletado': _fechaIdHoy,
+                'ultimoDiaCompletado': fechaIdHoy,
               });
               return true;
             }
@@ -284,7 +284,7 @@ class TareaProvider extends ChangeNotifier {
         }
       } else {
         tarea.estado = 'aprobada';
-        tarea.ultimoDiaCompletado = _fechaIdHoy;
+        tarea.ultimoDiaCompletado = fechaIdHoy;
         await tarea.save();
         notifyListeners();
         return true;
@@ -294,7 +294,7 @@ class TareaProvider extends ChangeNotifier {
   }
   
   Future<bool> aprobarTareaManual(Tarea tarea) async {
-    bool yaEstabaPagada = (tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == _fechaIdHoy);
+    bool yaEstabaPagada = (tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == fechaIdHoy);
     if (_uid.isNotEmpty) {
       final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
       try {
@@ -302,11 +302,11 @@ class TareaProvider extends ChangeNotifier {
           final snapshot = await transaction.get(docRef);
           if (!snapshot.exists) return false;
           final data = snapshot.data()!;
-          bool pagadaNube = (data['estado'] == 'aprobada' && data['ultimoDiaCompletado'] == _fechaIdHoy);
+          bool pagadaNube = (data['estado'] == 'aprobada' && data['ultimoDiaCompletado'] == fechaIdHoy);
           if (!pagadaNube) {
             transaction.update(docRef, {
               'estado': 'aprobada',
-              'ultimoDiaCompletado': _fechaIdHoy,
+              'ultimoDiaCompletado': fechaIdHoy,
             });
             return true;
           }
@@ -318,7 +318,7 @@ class TareaProvider extends ChangeNotifier {
     } else {
       if (!yaEstabaPagada) {
         tarea.estado = 'aprobada';
-        tarea.ultimoDiaCompletado = _fechaIdHoy;
+        tarea.ultimoDiaCompletado = fechaIdHoy;
         await tarea.save();
         notifyListeners();
         return true;
