@@ -87,10 +87,38 @@ class _FormularioTareaState extends State<FormularioTarea> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(widget.tarea == null ? "Nueva Misión" : "Editar Misión", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+              children: [
+                Text(widget.tarea == null ? "Nueva Misión" : "Editar Misión", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)), 
+                Semantics(
+                  label: "Cerrar formulario",
+                  button: true,
+                  child: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                )
+              ]
+            ),
             if (widget.tarea == null) ...[
               const SizedBox(height: 10), const Text("🚀 Rutinas Rápidas:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)), const SizedBox(height: 8),
-              SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _plantillas.map((p) => Padding(padding: const EdgeInsets.only(right: 8.0), child: ActionChip(avatar: Icon(p['icono'], size: 16, color: Colors.white), label: Text(p['nombre']), backgroundColor: Colors.indigo.shade300, labelStyle: const TextStyle(color: Colors.white, fontSize: 12), onPressed: () => _cargarPlantilla(p)))).toList())),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal, 
+                child: Row(
+                  children: _plantillas.map((p) => Padding(
+                    padding: const EdgeInsets.only(right: 8.0), 
+                    child: Semantics(
+                      label: "Usar plantilla rápida: ${p['nombre']}",
+                      button: true,
+                      child: ActionChip(
+                        avatar: Icon(p['icono'], size: 18, color: Colors.white), 
+                        label: Text(p['nombre']), 
+                        backgroundColor: Colors.indigo.shade300, 
+                        labelStyle: const TextStyle(color: Colors.white, fontSize: 13), 
+                        onPressed: () => _cargarPlantilla(p)
+                      ),
+                    )
+                  )).toList()
+                )
+              ),
               const Divider(height: 25),
             ],
             TextField(controller: _nombreCtrl, decoration: const InputDecoration(labelText: "Nombre Tarea", prefixIcon: Icon(Icons.task_alt))),
@@ -98,13 +126,76 @@ class _FormularioTareaState extends State<FormularioTarea> {
             Row(children: [Expanded(child: TextField(controller: _puntosCtrl, decoration: const InputDecoration(labelText: "Puntos", prefixIcon: Icon(Icons.monetization_on)), keyboardType: TextInputType.number)), const SizedBox(width: 10), Expanded(child: Container(decoration: BoxDecoration(color: _esObligatoria ? Colors.red[50] : Colors.grey[100], borderRadius: BorderRadius.circular(12), border: _esObligatoria ? Border.all(color: Colors.red.shade300) : null), child: SwitchListTile(title: const Text("Llave 🔑", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), subtitle: const Text("Obligatoria", style: TextStyle(fontSize: 10)), value: _esObligatoria, activeThumbColor: Colors.red, dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10), onChanged: (val) => setState(() => _esObligatoria = val))))]),
             const SizedBox(height: 15),
             const Text("Frecuencia:", style: TextStyle(fontWeight: FontWeight.bold)),
-            Wrap(spacing: 8.0, children: [ChoiceChip(label: const Text("Diaria"), selected: _tipoRecurrencia == 'diaria', onSelected: (val) => setState(() => _tipoRecurrencia = 'diaria')), ChoiceChip(label: const Text("Días Específicos"), selected: _tipoRecurrencia == 'semanal', onSelected: (val) => setState(() => _tipoRecurrencia = 'semanal')), ChoiceChip(label: const Text("Reto Único (Fecha)"), selected: _tipoRecurrencia == 'fecha_fija', onSelected: (val) => setState(() => _tipoRecurrencia = 'fecha_fija'))]),
-            if (_tipoRecurrencia == 'semanal') Wrap(spacing: 5, children: [for (var i = 1; i <= 7; i++) FilterChip(label: Text(_diaLetra(i)), selected: _diasSeleccionados.contains(i), onSelected: (selected) { setState(() { if (selected) { _diasSeleccionados.add(i); } else { _diasSeleccionados.remove(i); } }); })]),
-            if (_tipoRecurrencia == 'fecha_fija') ListTile(title: Text(_fechaFija == null ? "Seleccionar Fecha" : DateFormat('dd/MM/yyyy').format(_fechaFija!)), leading: const Icon(Icons.calendar_today, color: Colors.indigo), tileColor: Colors.grey[200], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), onTap: () async { final picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030)); if (picked != null) setState(() => _fechaFija = picked); }),
+            Wrap(
+              spacing: 8.0, 
+              runSpacing: 8.0,
+              children: [
+                Semantics(
+                  label: "Frecuencia Diaria",
+                  selected: _tipoRecurrencia == 'diaria',
+                  child: ChoiceChip(label: const Text("Diaria"), selected: _tipoRecurrencia == 'diaria', onSelected: (val) => setState(() => _tipoRecurrencia = 'diaria'))
+                ),
+                Semantics(
+                  label: "Frecuencia: Días Específicos",
+                  selected: _tipoRecurrencia == 'semanal',
+                  child: ChoiceChip(label: const Text("Días Específicos"), selected: _tipoRecurrencia == 'semanal', onSelected: (val) => setState(() => _tipoRecurrencia = 'semanal'))
+                ),
+                Semantics(
+                  label: "Reto Único en fecha fija",
+                  selected: _tipoRecurrencia == 'fecha_fija',
+                  child: ChoiceChip(label: const Text("Reto Único (Fecha)"), selected: _tipoRecurrencia == 'fecha_fija', onSelected: (val) => setState(() => _tipoRecurrencia = 'fecha_fija'))
+                ),
+              ]
+            ),
+            if (_tipoRecurrencia == 'semanal') 
+              Wrap(
+                spacing: 8, 
+                children: [
+                  for (var i = 1; i <= 7; i++) 
+                    Semantics(
+                      label: "Día: ${_diaLetra(i)}",
+                      selected: _diasSeleccionados.contains(i),
+                      child: FilterChip(
+                        label: Text(_diaLetra(i)), 
+                        selected: _diasSeleccionados.contains(i), 
+                        onSelected: (selected) { setState(() { if (selected) { _diasSeleccionados.add(i); } else { _diasSeleccionados.remove(i); } }); }
+                      ),
+                    )
+                ]
+              ),
+            if (_tipoRecurrencia == 'fecha_fija') 
+              Semantics(
+                label: "Seleccionar fecha del calendario",
+                child: ListTile(
+                  title: Text(_fechaFija == null ? "Seleccionar Fecha" : DateFormat('dd/MM/yyyy').format(_fechaFija!)), 
+                  leading: const Icon(Icons.calendar_today, color: Colors.indigo), 
+                  tileColor: Colors.grey[200], 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), 
+                  onTap: () async { final picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030)); if (picked != null) setState(() => _fechaFija = picked); }
+                ),
+              ),
             const SizedBox(height: 10),
             DropdownButton<String>(value: _bloque, items: const [DropdownMenuItem(value: 'manana', child: Text("🌞 Mañana")), DropdownMenuItem(value: 'tarde', child: Text("⛅ Tarde")), DropdownMenuItem(value: 'noche', child: Text("🌙 Noche"))], onChanged: (val) => setState(() => _bloque = val!)),
             const SizedBox(height: 10),
-            SizedBox(height: 60, child: ListView(scrollDirection: Axis.horizontal, children: _iconosDisponibles.map((icon) => GestureDetector(onTap: () => setState(() => _icono = icon), child: Container(margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _icono == icon ? Colors.indigo : Colors.grey[200], shape: BoxShape.circle), child: Icon(icon, color: _icono == icon ? Colors.white : Colors.black54)))).toList())),
+            SizedBox(
+              height: 60, 
+              child: ListView(
+                scrollDirection: Axis.horizontal, 
+                children: _iconosDisponibles.map((icon) => Semantics(
+                  label: "Elegir icono para la misión",
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _icono = icon), 
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 12), 
+                      padding: const EdgeInsets.all(14), 
+                      decoration: BoxDecoration(color: _icono == icon ? Colors.indigo : Colors.grey[200], shape: BoxShape.circle), 
+                      child: Icon(icon, color: _icono == icon ? Colors.white : Colors.black54, size: 28),
+                    )
+                  ),
+                )).toList()
+              )
+            ),
             const SizedBox(height: 20),
             ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)), onPressed: () {
               if (_nombreCtrl.text.isEmpty) return;

@@ -419,34 +419,49 @@ class _TabAdminPerfil extends StatelessWidget {
                     ...tareasDelGrupo.map((tarea) {
                       final esAprobada = tarea.ultimoDiaCompletado == tareaProv.fechaIdHoy;
 
-                      return Opacity(
-                        opacity: esAprobada ? 0.4 : 1.0,
+                      // Accesibilidad: Usar colores sólidos de alto contraste en lugar de opacidad
+                      return Semantics(
+                        label: esAprobada 
+                            ? "¡Misión cumplida! ${tarea.nombre}. Ya está aprobada por hoy." 
+                            : "Misión: ${tarea.nombre}. Toca para ver opciones de edición.",
+                        button: !esAprobada,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: esAprobada ? AppTheme.accessibleGrey : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            minVerticalPadding: 16, // Asegura altura de toque > 48dp
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             leading: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: esAprobada ? 0.05 : 0.1),
+                                color: esAprobada ? Colors.white.withValues(alpha: 0.5) : color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(tarea.icono, color: esAprobada ? Colors.grey : color, size: 22),
+                              child: Icon(tarea.icono, color: esAprobada ? AppTheme.highContrastGrey : color, size: 24),
                             ),
-                            title: Text(tarea.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                            title: Text(
+                              tarea.nombre, 
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600, 
+                                fontSize: 16,
+                                color: esAprobada ? AppTheme.highContrastGrey : Colors.black87,
+                              )
+                            ),
                             subtitle: Text(
                               "${_bloqueLabel(tarea.bloque)} • ${tarea.esObligatoria ? '🔑 Obligatoria' : '💰 ${tarea.puntos} pts'}",
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                              style: TextStyle(
+                                color: esAprobada ? AppTheme.highContrastGrey : Colors.grey.shade600, 
+                                fontSize: 14,
+                              ),
                             ),
                             trailing: esAprobada
                               ? const Padding(
-                                  padding: EdgeInsets.only(right: 16),
-                                  child: Icon(Icons.check_circle, color: Colors.green, size: 28),
+                                  padding: EdgeInsets.only(right: 12),
+                                  child: Icon(Icons.check_circle, color: Colors.green, size: 30),
                                 )
                               : Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -576,28 +591,35 @@ class _AccionRapida extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    return Semantics(
+      label: "Acción: $label",
+      button: true,
+      hint: "Toca para abrir $label",
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: Icon(icono, color: color, size: 24),
-              ),
-              const SizedBox(height: 8),
-              Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 13)),
-            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 80), // WCAG: Altura mínima
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: Icon(icono, color: color, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 13)),
+              ],
+            ),
           ),
         ),
       ),

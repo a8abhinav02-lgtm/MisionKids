@@ -79,18 +79,22 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                           // Top Row
                           Row(
                             children: [
-                              GestureDetector(
-                                onTap: () {
-                                  perfilesProv.limpiarPerfilActivo();
-                                  Navigator.pop(context);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
+                              Semantics(
+                                label: "Cerrar sesión y volver a selección de perfil",
+                                button: true,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    perfilesProv.limpiarPerfilActivo();
+                                    Navigator.pop(context);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 22),
                                   ),
-                                  child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                                 ),
                               ),
                               const Spacer(),
@@ -107,15 +111,19 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                                 ],
                               ),
                               const Spacer(),
-                              GestureDetector(
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistorialScreen())),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
+                              Semantics(
+                                label: "Ver mis logros y salón de la fama",
+                                button: true,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistorialScreen())),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.emoji_events, color: Colors.amber, size: 26),
                                   ),
-                                  child: const Icon(Icons.emoji_events, color: Colors.amber, size: 24),
                                 ),
                               ),
                             ],
@@ -164,20 +172,25 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                                     ),
                                   if (metaCumplida) ...[
                                     const SizedBox(height: 14),
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.amber,
-                                        foregroundColor: Colors.black87,
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                        elevation: 6,
-                                        shadowColor: Colors.amber.withValues(alpha: 0.5),
+                                    Semantics(
+                                      label: "¡Felicidades! Toca aquí para reclamar tu premio: $nombreMeta",
+                                      button: true,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.amber,
+                                          foregroundColor: Colors.black87,
+                                          minimumSize: const Size(200, 56), // Objetivo de toque amplio
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                          elevation: 6,
+                                          shadowColor: Colors.amber.withValues(alpha: 0.5),
+                                        ),
+                                        icon: const Icon(Icons.celebration, size: 28),
+                                        label: Text("¡RECLAMAR ${nombreMeta.toUpperCase()}!", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        onPressed: () {
+                                          _confettiController.play();
+                                          _mostrarDialogoReclamar(context, perfilesProv, perfilActual.id, nombreMeta, meta);
+                                        },
                                       ),
-                                      icon: const Icon(Icons.celebration, size: 24),
-                                      label: Text("¡RECLAMAR ${nombreMeta.toUpperCase()}!", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                      onPressed: () {
-                                        _confettiController.play();
-                                        _mostrarDialogoReclamar(context, perfilesProv, perfilActual.id, nombreMeta, meta);
-                                      },
                                     ),
                                   ],
                                 ],
@@ -327,86 +340,94 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
 
           bool interactuable = tarea.estaPendiente && esBloqueActivo;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              color: colorCard,
-              borderRadius: BorderRadius.circular(16),
-              border: tarea.esObligatoria ? Border.all(color: Colors.red.shade200, width: 1.5) : null,
-              boxShadow: [
-                if (interactuable) BoxShadow(color: colorBase.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
+          return Semantics(
+            label: interactuable 
+              ? "Misión disponible: ${tarea.nombre}. Toca para marcar como terminada." 
+              : (tarea.estaEnRevision 
+                  ? "Misión ${tarea.nombre} enviada. Esperando que papá o mamá la revisen." 
+                  : "Misión ${tarea.nombre}. No disponible en este momento."),
+            button: interactuable,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: colorCard,
                 borderRadius: BorderRadius.circular(16),
-                onTap: interactuable ? () {
-                  final perfilId = perfilesProv.perfilActivo?.id;
-                  if (perfilId != null && !tarea.esObligatoria && tareaProv.tieneObligatoriasPendientes(perfilId)) {
+                border: tarea.esObligatoria ? Border.all(color: Colors.red.shade200, width: 1.5) : null,
+                boxShadow: [
+                  if (interactuable) BoxShadow(color: colorBase.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3)),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: interactuable ? () {
+                    final perfilId = perfilesProv.perfilActivo?.id;
+                    if (perfilId != null && !tarea.esObligatoria && tareaProv.tieneObligatoriasPendientes(perfilId)) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("⚠️ ¡Primero envía a revisión tus llaves 🔑 obligatorias!"),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 3),
+                          )
+                        );
+                      }
+                      return;
+                    }
+
+                    _confettiController.play();
+                    tareaProv.solicitarRevision(tarea);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("⚠️ ¡Primero envía a revisión tus llaves 🔑 obligatorias!"),
-                          backgroundColor: Colors.red,
-                          duration: Duration(seconds: 3),
+                        SnackBar(
+                          content: Text("¡${tarea.nombre} enviada! Espera a revisión 🕒"),
+                          backgroundColor: colorBase,
+                          duration: const Duration(seconds: 2),
                         )
                       );
                     }
-                    return;
-                  }
-
-                  _confettiController.play();
-                  tareaProv.solicitarRevision(tarea);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("¡${tarea.nombre} enviada! Espera a revisión 🕒"),
-                        backgroundColor: colorBase,
-                        duration: const Duration(seconds: 2),
-                      )
-                    );
-                  }
-                } : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      // Icon
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: interactuable
-                              ? LinearGradient(colors: [colorBase.withValues(alpha: 0.15), colorBase.withValues(alpha: 0.05)])
-                              : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]),
-                          borderRadius: BorderRadius.circular(14),
+                  } : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Aumentado para accesibilidad
+                    child: Row(
+                      children: [
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: interactuable
+                                ? LinearGradient(colors: [colorBase.withValues(alpha: 0.15), colorBase.withValues(alpha: 0.05)])
+                                : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(tarea.icono, color: interactuable ? colorBase : AppTheme.highContrastGrey, size: 28),
                         ),
-                        child: Icon(tarea.icono, color: interactuable ? colorBase : Colors.grey, size: 26),
-                      ),
-                      const SizedBox(width: 14),
-                      // Text
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: interactuable ? Colors.black87 : Colors.grey)),
-                            const SizedBox(height: 2),
-                            Text(
-                              tarea.estaEnRevision 
-                                ? "⏳ En espera de aprobación..." 
-                                : (tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}"),
-                              style: TextStyle(
-                                color: tarea.estaEnRevision ? Colors.orange : (tarea.esObligatoria ? Colors.red : Colors.green.shade600), 
-                                fontWeight: FontWeight.w600, 
-                                fontSize: 13
+                        const SizedBox(width: 14),
+                        // Text
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min, // Evita height fijo
+                            children: [
+                              Text(tarea.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: interactuable ? Colors.black87 : AppTheme.highContrastGrey)),
+                              const SizedBox(height: 4),
+                              Text(
+                                tarea.estaEnRevision 
+                                  ? "⏳ En espera de aprobación..." 
+                                  : (tarea.esObligatoria ? "🔑 Obligatorio" : "💰 + \$${tarea.puntos}"),
+                                style: TextStyle(
+                                  color: tarea.estaEnRevision ? Colors.orange.shade800 : (tarea.esObligatoria ? Colors.red : Colors.green.shade700), 
+                                  fontWeight: FontWeight.w600, 
+                                  fontSize: 14
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      // Status
-                      interactuable
+                        // Status
+                        interactuable
                           ? Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
@@ -421,8 +442,9 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                 ),
               ),
             ),
-          );
-        }),
+          ),
+        );
+      }),
       ],
     );
   }

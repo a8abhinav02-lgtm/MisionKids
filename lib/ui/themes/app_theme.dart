@@ -43,6 +43,9 @@ class AppTheme {
     'indigo': 'Índigo',
   };
 
+  static const Color accessibleGrey = Color(0xFFE0E0E0);
+  static const Color highContrastGrey = Color(0xFF546E7A); // WCAG AA compliant with background
+
   /// Returns a gradient for headers based on the color key
   static LinearGradient getGradient(String colorKey) {
     final color = colors[colorKey] ?? Colors.indigo;
@@ -75,11 +78,13 @@ class AppTheme {
         backgroundColor: color.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true, // Accesibilidad: Títulos centrados son más fáciles de localizar
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
+          minimumSize: const Size(88, 48), // WCAG: Objetivo de toque mín 48dp
           elevation: 4,
           shadowColor: color.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
@@ -100,7 +105,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Aumentado para toque
       ),
     );
   }
