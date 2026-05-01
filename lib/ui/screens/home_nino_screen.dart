@@ -6,6 +6,8 @@ import 'package:animate_do/animate_do.dart';
 import '../../providers/perfiles_provider.dart';
 import '../../providers/tarea_provider.dart';
 import '../../models/tarea_model.dart';
+import '../../models/perfil_model.dart';
+import '../../models/perfil_model.dart';
 import '../themes/app_theme.dart';
 import 'historial_screen.dart';
 
@@ -173,7 +175,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                                   if (metaCumplida) ...[
                                     const SizedBox(height: 14),
                                     Semantics(
-                                      label: "¡Felicidades! Toca aquí para reclamar tu premio: $nombreMeta",
+                                      label: "¡Felicidades! Toca aquí para reclamar tu premio principal: $nombreMeta",
                                       button: true,
                                       child: ElevatedButton.icon(
                                         style: ElevatedButton.styleFrom(
@@ -193,6 +195,23 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                                       ),
                                     ),
                                   ],
+                                  const SizedBox(height: 16),
+                                  Semantics(
+                                    label: "¡Es hora de recompensas! Toca para ver la tienda de premios y canjear tus monedas.",
+                                    button: true,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: color,
+                                        minimumSize: const Size(double.infinity, 56), // Accesibilidad WCAG
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 2,
+                                      ),
+                                      icon: const Icon(Icons.storefront, size: 28),
+                                      label: const Text("Tienda de Premios", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      onPressed: () => _mostrarTiendaNino(context, perfilesProv, perfilActual, color),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -304,7 +323,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
     );
   }
 
-  Widget _crearSeccion(String titulo, Color colorBase, List<Tarea> tareas, TareaProvider tareaProv, PerfilesProvider perfilesProv, bool esBloqueActivo, MaterialColor perfilColor) {
+  Widget _crearSeccion(String titulo, Color color, List<Tarea> tareas, TareaProvider tareaProv, PerfilesProvider perfilesProv, bool esBloqueActivo, MaterialColor perfilColor) {
     if (tareas.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -314,12 +333,12 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: esBloqueActivo ? colorBase.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.06),
+            color: esBloqueActivo ? color.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              Text(titulo, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: esBloqueActivo ? colorBase : Colors.grey)),
+              Text(titulo, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: esBloqueActivo ? color : Colors.grey)),
               if (esBloqueActivo) Pulse(infinite: true, child: const Padding(padding: EdgeInsets.only(left: 8.0), child: Icon(Icons.bolt, color: Colors.amber, size: 20))),
               const Spacer(),
               Text("${tareas.length} misión${tareas.length > 1 ? 'es' : ''}", style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
@@ -354,7 +373,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: tarea.esObligatoria ? Border.all(color: Colors.red.shade200, width: 1.5) : null,
                 boxShadow: [
-                  if (interactuable) BoxShadow(color: colorBase.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3)),
+                  if (interactuable) BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3)),
                 ],
               ),
               child: Material(
@@ -383,7 +402,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text("¡${tarea.nombre} enviada! Espera a revisión 🕒"),
-                          backgroundColor: colorBase,
+                          backgroundColor: color,
                           duration: const Duration(seconds: 2),
                         )
                       );
@@ -398,11 +417,11 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             gradient: interactuable
-                                ? LinearGradient(colors: [colorBase.withValues(alpha: 0.15), colorBase.withValues(alpha: 0.05)])
+                                ? LinearGradient(colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)])
                                 : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Icon(tarea.icono, color: interactuable ? colorBase : AppTheme.highContrastGrey, size: 28),
+                          child: Icon(tarea.icono, color: interactuable ? color : AppTheme.highContrastGrey, size: 28),
                         ),
                         const SizedBox(width: 14),
                         // Text
@@ -431,10 +450,10 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                           ? Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: colorBase.withValues(alpha: 0.1),
+                                color: color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(Icons.touch_app, color: colorBase, size: 24),
+                              child: Icon(Icons.touch_app, color: color, size: 24),
                             )
                           : Icon(iconStatus, color: colorStatus, size: 30),
                     ],
@@ -446,6 +465,166 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
         );
       }),
       ],
+    );
+  }
+}
+
+void _mostrarTiendaNino(BuildContext context, PerfilesProvider perfilesProv, Perfil perfil, MaterialColor color) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _BottomSheetTiendaNino(perfil: perfil, perfilesProv: perfilesProv, color: color),
+  );
+}
+
+class _BottomSheetTiendaNino extends StatelessWidget {
+  final Perfil perfil;
+  final PerfilesProvider perfilesProv;
+  final MaterialColor color;
+
+  const _BottomSheetTiendaNino({required this.perfil, required this.perfilesProv, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F4F8),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        top: 20,
+        left: 20,
+        right: 20,
+      ),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+      child: ListenableBuilder(
+        listenable: perfilesProv,
+        builder: (context, _) {
+          final p = perfilesProv.buscarPerfil(perfil.id) ?? perfil;
+          final premios = p.catalogoPremios;
+          final saldo = p.saldo;
+
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(10)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text("🛒 Tienda de Premios", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+                      child: Text("\$ $saldo", style: TextStyle(color: color.shade700, fontWeight: FontWeight.bold, fontSize: 18)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (premios.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text("La tienda está vacía.\n¡Pídele a Papá que añada premios!", textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: premios.length,
+                      itemBuilder: (ctx, i) {
+                        final premio = premios[i];
+                        final int costo = premio['costo'] ?? 0;
+                        final bool alcanza = saldo >= costo;
+
+                        return Card(
+                          elevation: 2,
+                          color: alcanza ? Colors.white : AppTheme.accessibleGrey,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: alcanza ? color.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.card_giftcard, color: alcanza ? color : AppTheme.highContrastGrey, size: 28),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        premio['nombre']?.toString() ?? '', 
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold, 
+                                          fontSize: 16, 
+                                          color: alcanza ? Colors.black87 : AppTheme.highContrastGrey
+                                        )
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "\$ $costo", 
+                                        style: TextStyle(
+                                          color: alcanza ? Colors.green.shade700 : AppTheme.highContrastGrey, 
+                                          fontWeight: FontWeight.w600, 
+                                          fontSize: 14
+                                        )
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Semantics(
+                                  label: alcanza 
+                                      ? "¡Lo lograste! Canjear ${premio['nombre']} por $costo monedas" 
+                                      : "Ahorro en progreso. Te faltan ${costo - saldo} monedas para este premio.",
+                                  button: alcanza,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: alcanza ? color : AppTheme.accessibleGrey,
+                                      foregroundColor: alcanza ? Colors.white : AppTheme.highContrastGrey,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      minimumSize: const Size(64, 48), // Accesibilidad WCAG
+                                      elevation: alcanza ? 2 : 0,
+                                    ),
+                                    onPressed: alcanza ? () async {
+                                      await perfilesProv.canjearPremio(perfil.id, premio);
+                                      if (ctx.mounted) {
+                                        Navigator.pop(ctx);
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("¡Premio ${premio['nombre']} canjeado! 🎉", style: const TextStyle(fontSize: 16))));
+                                      }
+                                    } : null,
+                                    child: Text(alcanza ? "CANJEAR" : "LOCKED", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+      ),
     );
   }
 }

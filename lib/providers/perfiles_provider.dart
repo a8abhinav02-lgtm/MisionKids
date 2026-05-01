@@ -204,4 +204,94 @@ class PerfilesProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // --- Tienda de Premios ---
+  
+  Future<void> agregarPremioAlCatalogo(String perfilId, Map<String, dynamic> premioData) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    
+    final catalogo = List<Map<dynamic, dynamic>>.from(perfil.catalogoPremios);
+    catalogo.add(premioData);
+    
+    perfil.catalogoPremios = catalogo;
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'catalogoPremios': catalogo,
+      });
+    } else {
+      await perfil.save();
+    }
+    notifyListeners();
+  }
+
+  Future<void> eliminarPremioDelCatalogo(String perfilId, String premioId) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    
+    final catalogo = List<Map<dynamic, dynamic>>.from(perfil.catalogoPremios);
+    catalogo.removeWhere((p) => p['id'] == premioId);
+    
+    perfil.catalogoPremios = catalogo;
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'catalogoPremios': catalogo,
+      });
+    } else {
+      await perfil.save();
+    }
+    notifyListeners();
+  }
+
+  Future<void> editarPremioEnCatalogo(String perfilId, Map<dynamic, dynamic> premioEditado) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    
+    final catalogo = List<Map<dynamic, dynamic>>.from(perfil.catalogoPremios);
+    final index = catalogo.indexWhere((p) => p['id'] == premioEditado['id']);
+    
+    if (index != -1) {
+      catalogo[index] = premioEditado;
+      perfil.catalogoPremios = catalogo;
+
+      if (_uid.isNotEmpty) {
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+          'catalogoPremios': catalogo,
+        });
+      } else {
+        await perfil.save();
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> canjearPremio(String perfilId, Map<dynamic, dynamic> premioData) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    final int costo = (premioData['costo'] as num?)?.toInt() ?? 0;
+    final String nombrePremio = premioData['nombre']?.toString() ?? 'Premio Desconocido';
+
+    if (perfil.saldo >= costo && costo > 0) {
+      perfil.saldo -= costo;
+
+      final nuevaVictoria = {
+        'nombre': nombrePremio,
+        'fecha': DateTime.now().toIso8601String(),
+        'costo': costo,
+      };
+
+      final List<Map<dynamic, dynamic>> historial = List.from(perfil.historialVictorias);
+      historial.add(nuevaVictoria);
+      
+      perfil.historialVictorias = historial;
+
+      if (_uid.isNotEmpty) {
+        await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+          'saldo': FieldValue.increment(-costo),
+          'historialVictorias': historial,
+        });
+      } else {
+        await perfil.save();
+      }
+      notifyListeners();
+    }
+  }
 }

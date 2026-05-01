@@ -23,6 +23,7 @@ La aplicación utiliza refuerzos multimodales para la formación de hábitos:
 3.  **Refuerzo Multimodal:**
     *   **Visual:** Animaciones de confeti y atenuación de tareas aprobadas.
     *   **Auditivo:** Nuevo sistema de **Recordatorios Sonoros Persistentes** que notifican al niño cada X minutos (configurables por el padre) si hay misiones pendientes.
+    *   **Económico (Tienda de Premios):** Automatización del ciclo de recompensas. El niño canjea puntos por premios definidos por el padre, con validación de saldo en tiempo real y registro histórico automático.
 4.  **Inclusión Cognitiva:** Uso de **Semántica Natural** y altos contrastes para asegurar que niños con dificultades visuales o de aprendizaje puedan navegar la app mediante lectores de pantalla.
 5.  **Validación Familiar:** El flujo de aprobación padre-hijo fortalece el vínculo y la rendición de cuentas.
 
@@ -31,6 +32,7 @@ La aplicación utiliza refuerzos multimodales para la formación de hábitos:
 ## 🔵 3. Optimizaciones de Gestión (Admin)
 
 - **Agrupamiento Inteligente:** El panel de administración ahora agrupa automáticamente misiones por nombre, permitiendo gestionar múltiples horarios de una misma actividad de forma limpia.
+- **Tienda de Recompensas:** Gestión dinámica del catálogo de premios. Los padres pueden añadir, editar y eliminar recompensas físicas o de tiempo, supervisando el historial de canjes de cada perfil.
 - **Feedback de Estado:** El administrador identifica instantáneamente las tareas ya aprobadas mediante un estilo visual de alto contraste y atenuado, evitando duplicidad de acciones.
 
 ---
@@ -39,7 +41,6 @@ La aplicación utiliza refuerzos multimodales para la formación de hábitos:
 
 1.  **Analíticas de Padres:** Gráficas de rendimiento semanal por perfil para detectar patrones de hábito.
 2.  **Notificaciones Push:** Integración de Firebase Cloud Messaging para alertas fuera de la app.
-3.  **Tienda de Premios:** Automatización del descuento de puntos al canjear recompensas físicas o de tiempo.
 
 ---
 

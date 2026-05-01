@@ -270,24 +270,46 @@ class _TabAdminPerfil extends StatelessWidget {
         // ACCIONES RÁPIDAS
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: _AccionRapida(
-                  icono: Icons.edit_note,
-                  label: "Editar Reto",
-                  color: Colors.blue,
-                  onTap: () => _dialogoDefinirMeta(context),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AccionRapida(
+                      icono: Icons.storefront,
+                      label: "Tienda (Premios)",
+                      color: Colors.purple,
+                      onTap: () => _mostrarDialogoTiendaAdmin(context),
+                      semanticLabel: "Gestión de recompensas. Toca para ver y editar los premios de la tienda.",
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _AccionRapida(
+                      icono: Icons.edit_note,
+                      label: "Meta Principal",
+                      color: Colors.blue,
+                      onTap: () => _dialogoDefinirMeta(context),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _AccionRapida(
-                  icono: Icons.warning_amber_rounded,
-                  label: "Multa",
-                  color: Colors.red,
-                  onTap: () => _mostrarDialogoSancion(context),
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AccionRapida(
+                      icono: Icons.warning_amber_rounded,
+                      label: "Sanción / Multa",
+                      color: Colors.red,
+                      onTap: () => _mostrarDialogoSancion(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(), // Espacio vacío para balancear
+                  ),
+                ],
               ),
             ],
           ),
@@ -577,6 +599,15 @@ class _TabAdminPerfil extends StatelessWidget {
       builder: (_) => FormularioTarea(tarea: tareaExistente, perfilId: perfil.id),
     );
   }
+
+  void _mostrarDialogoTiendaAdmin(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BottomSheetTiendaAdmin(perfilId: perfil.id, perfilesProv: perfilesProv),
+    );
+  }
 }
 
 // ============ QUICK ACTION BUTTON ============
@@ -586,13 +617,20 @@ class _AccionRapida extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final String? semanticLabel;
 
-  const _AccionRapida({required this.icono, required this.label, required this.color, required this.onTap});
+  const _AccionRapida({
+    required this.icono,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.semanticLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: "Acción: $label",
+      label: semanticLabel ?? "Acción: $label",
       button: true,
       hint: "Toca para abrir $label",
       child: Material(
@@ -621,6 +659,229 @@ class _AccionRapida extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============ TIENDA BOTTOM SHEET ============
+
+class _BottomSheetTiendaAdmin extends StatefulWidget {
+  final String perfilId;
+  final PerfilesProvider perfilesProv;
+
+  const _BottomSheetTiendaAdmin({required this.perfilId, required this.perfilesProv});
+
+  @override
+  State<_BottomSheetTiendaAdmin> createState() => _BottomSheetTiendaAdminState();
+}
+
+class _BottomSheetTiendaAdminState extends State<_BottomSheetTiendaAdmin> {
+  final _nombreCtrl = TextEditingController();
+  final _costoCtrl = TextEditingController();
+  String? _idPremioEdicion;
+
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    _costoCtrl.dispose();
+    super.dispose();
+  }
+
+  void _limpiarFormulario() {
+    _nombreCtrl.clear();
+    _costoCtrl.clear();
+    setState(() {
+      _idPremioEdicion = null;
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  void _guardarPremio() {
+    if (_nombreCtrl.text.isNotEmpty && _costoCtrl.text.isNotEmpty) {
+      final premio = {
+        'id': _idPremioEdicion ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'nombre': _nombreCtrl.text,
+        'costo': int.tryParse(_costoCtrl.text) ?? 0,
+        'icono': 'card_giftcard',
+      };
+      
+      if (_idPremioEdicion == null) {
+        widget.perfilesProv.agregarPremioAlCatalogo(widget.perfilId, premio);
+      } else {
+        widget.perfilesProv.editarPremioEnCatalogo(widget.perfilId, premio);
+      }
+      
+      _limpiarFormulario();
+    }
+  }
+
+  void _prepararEdicion(Map<dynamic, dynamic> p) {
+    setState(() {
+      _idPremioEdicion = p['id']?.toString();
+      _nombreCtrl.text = p['nombre']?.toString() ?? '';
+      _costoCtrl.text = p['costo']?.toString() ?? '';
+    });
+  }
+
+  void _confirmarEliminacion(Map<dynamic, dynamic> p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("¿Eliminar premio?"),
+        content: Text("¿Estás seguro de que quieres eliminar '${p['nombre']}' de la tienda?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("CANCELAR")),
+          TextButton(
+            onPressed: () {
+              widget.perfilesProv.eliminarPremioDelCatalogo(widget.perfilId, p['id']?.toString() ?? '');
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Premio eliminado correctamente")));
+            },
+            child: const Text("ELIMINAR", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final perfil = widget.perfilesProv.buscarPerfil(widget.perfilId);
+    if (perfil == null) return const SizedBox();
+
+    final premios = perfil.catalogoPremios;
+    final bool editando = _idPremioEdicion != null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        top: 20,
+        left: 20,
+        right: 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(editando ? "📝 Editando Premio" : "🛒 Gestión de Tienda", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                ),
+                if (editando) IconButton(icon: const Icon(Icons.cancel_outlined), onPressed: _limpiarFormulario),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Form to add/edit a prize
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: editando ? Colors.blue.shade50 : Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: editando ? Colors.blue.shade200 : Colors.purple.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(editando ? "Actualizar detalles del premio" : "Añadir nuevo premio", style: TextStyle(fontWeight: FontWeight.bold, color: editando ? Colors.blue : Colors.purple)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _nombreCtrl,
+                    decoration: InputDecoration(
+                      labelText: "Nombre (ej. Media hora de TV)",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _costoCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: "Costo (pts)",
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Semantics(
+                        label: editando ? "Guardar cambios" : "Añadir premio al catálogo",
+                        button: true,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: editando ? Colors.blue : Colors.purple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: const Size(56, 56),
+                          ),
+                          onPressed: _guardarPremio,
+                          child: Icon(editando ? Icons.check : Icons.add),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text("Catálogo Actual", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            if (premios.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text("Aún no hay premios en la tienda. ¡Añade el primero!"),
+              )
+            else
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: premios.length,
+                  itemBuilder: (ctx, i) {
+                    final p = premios[i];
+                    return Card(
+                      elevation: 0,
+                      color: Colors.grey.shade100,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: const CircleAvatar(backgroundColor: Colors.amber, child: Icon(Icons.star, color: Colors.white)),
+                        title: Text(p['nombre']?.toString() ?? ''),
+                        subtitle: Text("Costo: \$${p['costo']}"),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                              onPressed: () => _prepararEdicion(p),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              onPressed: () => _confirmarEliminacion(p),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );
