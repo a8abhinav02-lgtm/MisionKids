@@ -264,34 +264,87 @@ class PerfilesProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> canjearPremio(String perfilId, Map<dynamic, dynamic> premioData) async {
+  Future<void> solicitarCanje(String perfilId, Map<dynamic, dynamic> premioData) async {
     final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
     final int costo = (premioData['costo'] as num?)?.toInt() ?? 0;
-    final String nombrePremio = premioData['nombre']?.toString() ?? 'Premio Desconocido';
 
     if (perfil.saldo >= costo && costo > 0) {
-      perfil.saldo -= costo;
+      perfil.saldo -= costo; // Reserva temporal
 
-      final nuevaVictoria = {
-        'nombre': nombrePremio,
-        'fecha': DateTime.now().toIso8601String(),
+      final solicitud = {
+        'idSolicitud': DateTime.now().millisecondsSinceEpoch.toString(),
+        'premioId': premioData['id'],
+        'nombre': premioData['nombre'],
         'costo': costo,
+        'fecha': DateTime.now().toIso8601String(),
       };
 
-      final List<Map<dynamic, dynamic>> historial = List.from(perfil.historialVictorias);
-      historial.add(nuevaVictoria);
-      
-      perfil.historialVictorias = historial;
+      final List<Map<dynamic, dynamic>> solicitudes = List.from(perfil.solicitudesCanje);
+      solicitudes.add(solicitud);
+      perfil.solicitudesCanje = solicitudes;
 
       if (_uid.isNotEmpty) {
         await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
           'saldo': FieldValue.increment(-costo),
-          'historialVictorias': historial,
+          'solicitudesCanje': solicitudes,
         });
       } else {
         await perfil.save();
       }
       notifyListeners();
     }
+  }
+
+  Future<void> aprobarCanje(String perfilId, Map<dynamic, dynamic> solicitud) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    
+    final List<Map<dynamic, dynamic>> solicitudes = List.from(perfil.solicitudesCanje);
+    solicitudes.removeWhere((s) => s['idSolicitud'] == solicitud['idSolicitud']);
+    perfil.solicitudesCanje = solicitudes;
+
+    final victoria = {
+      'nombre': solicitud['nombre'],
+      'fecha': DateTime.now().toIso8601String(),
+      'costo': solicitud['costo'],
+    };
+
+    final List<Map<dynamic, dynamic>> historial = List.from(perfil.historialVictorias);
+    historial.add(victoria);
+    perfil.historialVictorias = historial;
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'solicitudesCanje': solicitudes,
+        'historialVictorias': historial,
+      });
+    } else {
+      await perfil.save();
+    }
+    notifyListeners();
+  }
+
+  Future<void> rechazarCanje(String perfilId, String idSolicitud) async {
+    final perfil = todosLosPerfiles.firstWhere((p) => p.id == perfilId);
+    
+    final solicitud = perfil.solicitudesCanje.firstWhere((s) => s['idSolicitud'] == idSolicitud, orElse: () => {});
+    if (solicitud.isEmpty) return;
+
+    final int costo = (solicitud['costo'] as num?)?.toInt() ?? 0;
+
+    final List<Map<dynamic, dynamic>> solicitudes = List.from(perfil.solicitudesCanje);
+    solicitudes.removeWhere((s) => s['idSolicitud'] == idSolicitud);
+    perfil.solicitudesCanje = solicitudes;
+    
+    perfil.saldo += costo; // Reembolso
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'solicitudesCanje': solicitudes,
+        'saldo': FieldValue.increment(costo),
+      });
+    } else {
+      await perfil.save();
+    }
+    notifyListeners();
   }
 }

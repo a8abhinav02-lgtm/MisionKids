@@ -374,6 +374,60 @@ class _TabAdminPerfil extends StatelessWidget {
           ),
         ],
 
+        // CANJES PENDIENTES
+        if (perfil.solicitudesCanje.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          FadeInDown(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.purple.shade200, width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.purple.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.card_giftcard, color: Colors.purple, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Text("Premios Solicitados (${perfil.solicitudesCanje.length})", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple)),
+                  ]),
+                  const SizedBox(height: 12),
+                  ...perfil.solicitudesCanje.map((solicitud) => Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(14)),
+                    child: ListTile(
+                      leading: CircleAvatar(backgroundColor: Colors.purple.shade100, child: Icon(Icons.star, color: Colors.purple.shade700, size: 22)),
+                      title: Text(solicitud['nombre']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text("💰 \$${solicitud['costo']}"),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 28),
+                            onPressed: () => perfilesProv.rechazarCanje(perfil.id, solicitud['idSolicitud']),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                            onPressed: () => perfilesProv.aprobarCanje(perfil.id, solicitud),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ),
+        ],
+
         // MISIONES EXISTENTES
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),

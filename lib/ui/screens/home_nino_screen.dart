@@ -546,6 +546,9 @@ class _BottomSheetTiendaNino extends StatelessWidget {
                       itemBuilder: (ctx, i) {
                         final premio = premios[i];
                         final int costo = premio['costo'] ?? 0;
+                        final String premioId = premio['id']?.toString() ?? '';
+                        
+                        final bool yaSolicitado = p.solicitudesCanje.any((s) => s['premioId'] == premioId);
                         final bool alcanza = saldo >= costo;
 
                         return Card(
@@ -591,26 +594,31 @@ class _BottomSheetTiendaNino extends StatelessWidget {
                                   ),
                                 ),
                                 Semantics(
-                                  label: alcanza 
-                                      ? "¡Lo lograste! Canjear ${premio['nombre']} por $costo monedas" 
-                                      : "Ahorro en progreso. Te faltan ${costo - saldo} monedas para este premio.",
-                                  button: alcanza,
+                                  label: yaSolicitado 
+                                      ? "Premio ya solicitado, esperando a Papá" 
+                                      : alcanza 
+                                        ? "¡Lo lograste! Canjear ${premio['nombre']} por $costo monedas" 
+                                        : "Ahorro en progreso. Te faltan ${costo - saldo} monedas para este premio.",
+                                  button: !yaSolicitado && alcanza,
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: alcanza ? color : AppTheme.accessibleGrey,
-                                      foregroundColor: alcanza ? Colors.white : AppTheme.highContrastGrey,
+                                      backgroundColor: yaSolicitado ? Colors.orange : (alcanza ? color : AppTheme.accessibleGrey),
+                                      foregroundColor: yaSolicitado ? Colors.white : (alcanza ? Colors.white : AppTheme.highContrastGrey),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       minimumSize: const Size(64, 48), // Accesibilidad WCAG
                                       elevation: alcanza ? 2 : 0,
                                     ),
-                                    onPressed: alcanza ? () async {
-                                      await perfilesProv.canjearPremio(perfil.id, premio);
+                                    onPressed: (!yaSolicitado && alcanza) ? () async {
+                                      await perfilesProv.solicitarCanje(perfil.id, premio);
                                       if (ctx.mounted) {
                                         Navigator.pop(ctx);
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("¡Premio ${premio['nombre']} canjeado! 🎉", style: const TextStyle(fontSize: 16))));
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("¡Solicitud enviada a Papá! ⏳", style: const TextStyle(fontSize: 16))));
                                       }
                                     } : null,
-                                    child: Text(alcanza ? "CANJEAR" : "LOCKED", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    child: Text(
+                                      yaSolicitado ? "SOLICITADO" : (alcanza ? "CANJEAR" : "LOCKED"), 
+                                      style: const TextStyle(fontWeight: FontWeight.bold)
+                                    ),
                                   ),
                                 ),
                               ],
