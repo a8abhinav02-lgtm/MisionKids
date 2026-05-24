@@ -68,11 +68,7 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                       _step == -1 ? "¡Bienvenida Familia!" : (_isLoginFlow ? "Inicia sesión" : "Crea tu cuenta familiar"),
                       style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.6)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Versión: v1.5.0-Aprobaciones 🔒",
-                      style: TextStyle(fontSize: 11, color: Colors.amber.withValues(alpha: 0.7), fontWeight: FontWeight.bold),
-                    ),
+
                     const SizedBox(height: 30),
 
                     if (_step == -1) 
