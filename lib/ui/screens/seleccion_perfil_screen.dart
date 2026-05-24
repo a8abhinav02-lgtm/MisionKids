@@ -77,6 +77,15 @@ class SeleccionPerfilScreen extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.6),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Versión: v1.5.0-Aprobaciones 🔒",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.amber.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
