@@ -31,6 +31,7 @@ class AuthProvider extends ChangeNotifier {
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
   String get pinPadre => _cajaConfig?.get('pin_padre', defaultValue: '') ?? '';
   String get emailPadre => _cajaConfig?.get('email_padre', defaultValue: '') ?? '';
+  bool get estaAprobado => _cajaConfig?.get('aprobado', defaultValue: true) ?? true;
 
   Future<void> registrarAdmin({
     required String email,
@@ -50,12 +51,14 @@ class AuthProvider extends ChangeNotifier {
         'pin_padre': pin,
         'email_padre': email,
         'fecha_creacion': FieldValue.serverTimestamp(),
+        'aprobado': false, // Nuevos usuarios requieren aprobación
       });
 
       // 3. Guardar localmente para acceso rápido offline
       await _cajaConfig!.put('pin_padre', pin);
       await _cajaConfig!.put('email_padre', email);
       await _cajaConfig!.put('setup_completo', true);
+      await _cajaConfig!.put('aprobado', false);
 
       notifyListeners();
     } catch (e) {
@@ -82,6 +85,18 @@ class AuthProvider extends ChangeNotifier {
       await _cajaConfig!.put('pin_padre', data['pin_padre']);
       await _cajaConfig!.put('email_padre', data['email_padre']);
       await _cajaConfig!.put('setup_completo', true);
+      await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+    }
+  }
+
+  Future<void> recomprobarAprobacion() async {
+    isLoading = true;
+    notifyListeners();
+    try {
+      await _sincronizarPinDesdeNube();
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 

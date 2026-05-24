@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
 import '../themes/app_theme.dart';
 import 'setup_familia_screen.dart';
+import 'esperando_aprobacion_screen.dart';
 import 'home_nino_screen.dart';
 import 'admin_screen.dart';
 
@@ -23,6 +24,10 @@ class SeleccionPerfilScreen extends StatelessWidget {
 
     if (!authProv.existeAdmin) {
       return const SetupFamiliaScreen();
+    }
+
+    if (!authProv.estaAprobado) {
+      return const EsperandoAprobacionScreen();
     }
 
     final perfiles = perfilesProv.todosLosPerfiles;
