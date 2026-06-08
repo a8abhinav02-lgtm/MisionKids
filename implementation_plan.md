@@ -22,7 +22,7 @@ Este plan detalla el rediseño del backend de base de datos (Firestore) y la ló
 ### 1. Esquema de Datos y Seguridad
 
 #### [MODIFY] Reglas de Seguridad de Firestore (En la consola web de Firebase)
-*   Reemplazar las reglas actuales por unas basadas en pertenencia al arreglo de `padres` en el documento familiar:
+*   Reemplazar las reglas actuales por unas basadas en pertenencia al arreglo de `padres` en el documento familiar, dando soporte a la creación de documentos y migración retrocompatible:
     ```javascript
     rules_version = '2';
     service cloud.firestore {
@@ -30,9 +30,25 @@ Este plan detalla el rediseño del backend de base de datos (Firestore) y la ló
         match /usuarios/{userId} {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
-        match /familias/{familiaId}/{document=**} {
-          allow read, write: if request.auth != null && 
-            request.auth.uid in get(/databases/$(database)/documents/familias/{familiaId}).data.padres;
+        match /familias/{familiaId} {
+          allow read: if request.auth != null && (
+            request.auth.uid == familiaId || 
+            (resource != null && 'padres' in resource.data && request.auth.uid in resource.data.padres)
+          );
+          allow write: if request.auth != null && (
+            request.auth.uid == familiaId ||
+            (request.resource != null && 'padres' in request.resource.data && request.auth.uid in request.resource.data.padres) ||
+            (resource != null && 'padres' in resource.data && request.auth.uid in resource.data.padres)
+          );
+          
+          match /{document=**} {
+            allow read, write: if request.auth != null && (
+              request.auth.uid == familiaId || 
+              (get(/databases/$(database)/documents/familias/{familiaId}).data != null && 
+               'padres' in get(/databases/$(database)/documents/familias/{familiaId}).data &&
+               request.auth.uid in get(/databases/$(database)/documents/familias/{familiaId}).data.padres)
+            );
+          }
         }
       }
     }
