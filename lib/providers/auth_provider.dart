@@ -20,9 +20,16 @@ class AuthProvider extends ChangeNotifier {
     _cajaConfig = await Hive.openBox('caja_auth_v2');
     _usuarioActual = _auth.currentUser;
     
-    // Si tenemos usuario pero no PIN local, intentamos traerlo de Firestore
-    if (_usuarioActual != null && pinPadre.isEmpty) {
-      await _sincronizarPinDesdeNube();
+    // Si tenemos usuario, sincronizamos y validamos migración desde la nube
+    if (_usuarioActual != null) {
+      try {
+        await _sincronizarPinDesdeNube();
+      } catch (e) {
+        // En caso de error de red, permitimos iniciar offline si ya tenemos PIN local
+        if (pinPadre.isEmpty) {
+          rethrow;
+        }
+      }
     }
 
     isLoading = false;
