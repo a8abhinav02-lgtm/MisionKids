@@ -91,7 +91,8 @@ class PerfilesProvider extends ChangeNotifier {
   }
   
   Perfil? buscarPerfil(String id) {
-     return todosLosPerfiles.firstWhere((p) => p.id == id, orElse: () => null as Perfil);
+    final list = todosLosPerfiles.where((p) => p.id == id);
+    return list.isEmpty ? null : list.first;
   }
 
   Future<void> crearPerfil({

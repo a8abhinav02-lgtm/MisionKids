@@ -7,7 +7,6 @@ import '../../providers/perfiles_provider.dart';
 import '../../providers/tarea_provider.dart';
 import '../../models/tarea_model.dart';
 import '../../models/perfil_model.dart';
-import '../../models/perfil_model.dart';
 import '../themes/app_theme.dart';
 import 'historial_screen.dart';
 

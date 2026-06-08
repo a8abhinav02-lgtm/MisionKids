@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tarea_model.dart';
-import 'package:intl/intl.dart';
 
 class TareaProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -67,11 +66,7 @@ class TareaProvider extends ChangeNotifier {
     final tareasLocales = _cajaTareas!.values.toList();
     if (tareasLocales.isEmpty) return;
 
-    // 1. Traer perfiles de Firestore para corregir IDs de perfil si es necesario
-    final perfilesSnapshot = await _db.collection('familias').doc(_uid).collection('perfiles').get();
-    final perfilesNube = perfilesSnapshot.docs.map((doc) => doc.data()).toList();
-
-    // 2. Traer tareas existentes en Firestore
+    // 1. Traer tareas existentes en Firestore
     final tareasSnapshot = await _db.collection('familias').doc(_uid).collection('tareas').get();
     final tareasNube = tareasSnapshot.docs.map((doc) => Tarea.fromMap(doc.data())).toList();
 
