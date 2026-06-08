@@ -1,82 +1,102 @@
-# Plan de Implementación: Recordatorios de Misiones en Segundo Plano ⏰
+# Plan de Implementación: Cuentas Compartidas (Co-parenting) 👥
 
-Este plan describe la incorporación de notificaciones locales nativas para recordar al niño sus tareas pendientes cuando la aplicación está minimizada (background) o cerrada.
+Este plan detalla el rediseño del backend de base de datos (Firestore) y la lógica de autenticación en la app para permitir que múltiples cuentas de padres (correos independientes) gestionen la misma cuenta familiar en tiempo real.
+
+## Recomendación de Rama (Git)
+
+> [!IMPORTANT]
+> **Es sumamente necesario crear una nueva rama de Git** (ej. `feature/cuentas-compartidas`) partiendo del estado actual. 
+> Dado que realizaremos una reestructuración de la base de datos (esquema) y alteraremos el flujo de sincronización de datos de primer plano, separar este trabajo en una rama limpia facilitará el testeo, aislará riesgos y permitirá hacer rollback en caso de cualquier inconveniente sin afectar el código estable de la rama `feature/desbloqueo-registro`.
 
 ## User Review Required
 
-> [!IMPORTANT]
-> **Compatibilidad de Plataformas e Inicialización:**
-> 1. Para iOS y Android se requiere solicitar permisos de notificación explísitos la primera vez que se accede al panel de niños.
-> 2. En Android 13+ (API 33+), se activará el diálogo nativo de solicitud de permiso `POST_NOTIFICATIONS`.
-> 3. En Android, para asegurar recordatorios exactos (ej. cada X minutos de retraso) usaremos alarmas de sistema, lo cual requiere registrar receptores nativos en el `AndroidManifest.xml`.
+> [!WARNING]
+> **Migración del Esquema y Reglas de Firebase:**
+> 1. **Migración Silenciosa:** Para no perder los datos de familias existentes, el código del `AuthProvider` implementará un disparador de compatibilidad: si detecta el esquema antiguo en Firestore (`/familias/{uid}`), migrará automáticamente los datos al nuevo formato de forma transparente para el usuario.
+> 2. **Cambio de Reglas en Firebase Console:** Este cambio requiere que actualices las reglas de seguridad en la consola web de Firestore para permitir que múltiples UIDs accedan a la misma colección familiar.
+
+---
 
 ## Proposed Changes
 
-### Dependencias y Configuración Base
+### 1. Esquema de Datos y Seguridad
 
-#### [MODIFY] [pubspec.yaml](file:///c:/Users/angel/josue_tareas/pubspec.yaml)
-*   Añadir las dependencias para alertas locales y zonas horarias:
-    *   `flutter_local_notifications: ^17.0.0` (o versión compatible determinada por flutter pub)
-    *   `timezone: ^0.9.4` (necesaria para la programación de notificaciones basada en horas de calendario)
-
-#### [MODIFY] [AndroidManifest.xml](file:///c:/Users/angel/josue_tareas/android/app/src/main/AndroidManifest.xml)
-*   Añadir permisos nativos de vibración, arranque del dispositivo (para reprogramar alertas tras apagar/encender) y notificaciones:
-    ```xml
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    ```
-*   Registrar los `receivers` necesarios para que las alarmas despierten al dispositivo:
-    ```xml
-    <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" android:exported="true" />
-    <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver" android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-        </intent-filter>
-    </receiver>
+#### [MODIFY] Reglas de Seguridad de Firestore (En la consola web de Firebase)
+*   Reemplazar las reglas actuales por unas basadas en pertenencia al arreglo de `padres` en el documento familiar:
+    ```javascript
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+        match /usuarios/{userId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+        match /familias/{familiaId}/{document=**} {
+          allow read, write: if request.auth != null && 
+            request.auth.uid in get(/databases/$(database)/documents/familias/{familiaId}).data.padres;
+        }
+      }
+    }
     ```
 
 ---
 
-### Componentes de Notificación
+### 2. Autenticación y Sincronización
 
-#### [NEW] [notification_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/notification_service.dart)
-*   Crear una clase singleton `NotificationService` con las siguientes responsabilidades:
-    *   `inicializar()`: Inicializa el plugin, establece la zona horaria local (`tz.initializeDatabase()`) y crea el canal de misiones ("Canal de Recordatorios", ID: `mission_reminders`, importancia alta y vibración).
-    *   `solicitarPermisos()`: Pide permisos en iOS (`requestPermissions`) y dispara la petición en Android 13+.
-    *   `programarNotificacion(int id, String titulo, String cuerpo, DateTime fecha)`: Programa una alerta nativa para un momento futuro usando `zonedSchedule`.
-    *   `cancelarTodas()`: Limpia todas las alertas planificadas en el sistema operativo.
+#### [MODIFY] [auth_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/auth_provider.dart)
+*   **Campos Nuevos:**
+    *   `String _familiaId = '';`
+    *   `String get familiaId => _familiaId;`
+*   **Lógica de Login (`loginPadre`):**
+    *   Iniciar sesión con Firebase Auth.
+    *   Consultar la colección `/usuarios/{uid}` para extraer su `familiaId`.
+    *   Si el usuario no tiene documento en `/usuarios/{uid}` pero sí existe la familia clásica `/familias/{uid}`, ejecutar la **migración silenciosa**:
+        1. Copiar los datos de `/familias/{uid}` a `/familias/FAM_{uid}` (nuevo ID).
+        2. Mapear en `/usuarios/{uid}` el campo `familiaId: 'FAM_{uid}'`.
+        3. Migrar las subcolecciones `/perfiles` y `/tareas` al nuevo ID.
+    *   Asignar `_familiaId` localmente y guardarlo en Hive para persistencia offline.
+*   **Lógica de Registro (`registrarAdmin`):**
+    *   Crear el usuario en Firebase Auth.
+    *   Generar un ID de familia único legible (ej. `MK-` + 6 dígitos aleatorios).
+    *   Crear documento `/usuarios/{uid}` con `{ 'email': email, 'familiaId': familiaId }`.
+    *   Crear el documento familiar `/familias/{familiaId}` con `{ 'pin_padre': pin, 'email_padre': email, 'padres': [uid] }`.
+*   **Lógica para Unirse (`unirseAFamilia`):**
+    *   `Future<void> unirseAFamilia(String codigoFamilia)`:
+        1. Verificar que el `codigoFamilia` exista en `/familias/`.
+        2. Actualizar `/usuarios/{uid}` con `familiaId: codigoFamilia`.
+        3. Añadir el `uid` del usuario al arreglo de `padres` en `/familias/{codigoFamilia}` mediante `FieldValue.arrayUnion([uid])`.
 
-#### [MODIFY] [main.dart](file:///c:/Users/angel/josue_tareas/lib/main.dart)
-*   Llamar a `NotificationService.inicializar()` en el método `main()` antes de iniciar la app.
+#### [MODIFY] [perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart) y [tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/tarea_provider.dart)
+*   Reemplazar las llamadas que usaban `_uid` para escuchar en Firestore por `_familiaId` expuesto por `AuthProvider`:
+    ```dart
+    // Ejemplo en _escucharTareas():
+    _db.collection('familias').doc(_familiaId).collection('tareas').snapshots();
+    ```
 
 ---
 
-### Lógica de Segundo Plano
+### 3. Modificaciones en la Interfaz (UI)
 
-#### [MODIFY] [reminder_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/reminder_service.dart)
-*   Añadir `WidgetsBindingObserver` a la clase `_ReminderServiceState` para reaccionar al ciclo de vida de la aplicación.
-*   **En Primer Plano (Foreground):**
-    *   El funcionamiento del `Timer.periodic` actual se mantiene intacto (comprobación por minuto, snackbar y reproducción rápida de audio local mediante `SoundService.playReminder()`). Esto ahorra overhead de notificaciones del sistema mientras la app está abierta.
-*   **Al pasar a Segundo Plano / Minimizar (`AppLifecycleState.paused`):**
-    *   Verificar si el perfil seleccionado tiene misiones pendientes para la jornada actual o atrasadas.
-    *   Si existen misiones pendientes, calcular el intervalo `frecuenciaRecordatorio` del niño (ej. 10 minutos).
-    *   Planificar **5 notificaciones consecutivas** a futuro (ej. en `T+10min`, `T+20min`, `T+30min`, `T+40min`, `T+50min`).
-    *   El contenido recordará al niño: *"¡Hola [Nombre]! Aún tienes [N] misiones esperando por ti. ¡Vamos a completarlas! 🚀"*
-*   **Al regresar a Primer Plano (`AppLifecycleState.resumed`):**
-    *   Ejecutar `NotificationService.cancelarTodas()`. Esto remueve inmediatamente las notificaciones planificadas, evitando que suonen alertas obsoletas mientras la app está activa.
-*   **En la aprobación o cambio de estado de tareas:**
-    *   Si el niño completa las misiones y la lista de tareas activas queda vacía, se limpia cualquier alerta programada.
+#### [MODIFY] [setup_familia_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/setup_familia_screen.dart)
+*   Añadir una tercera opción en la bienvenida: **"Unirme a Familia Compartida 👥"**.
+*   Si se selecciona:
+    *   Pedir login de correo y contraseña (o registro rápido).
+    *   Solicitar que ingrese el código de familia (ej. `MK-102938`).
+    *   Ejecutar `unirseAFamilia(codigo)` y redireccionar a la selección de perfiles.
+
+#### [MODIFY] [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)
+*   En la Zona de Padres, en la tarjeta de resumen o una sección dedicada a la configuración, mostrar de forma prominente:
+    *   **Código de Familia Compartido:** `MK-XXXXXX` (con botón de "Copiar al portapapeles").
+    *   **Miembros Autorizados:** Listar los correos electrónicos de los padres que tienen acceso a la familia.
 
 ---
 
 ## Plan de Verificación
 
-### Pruebas Manuales
-1.  **Validación de Permisos:** Al ingresar a la pantalla de un niño, verificar que aparezca la solicitud de permisos de notificación.
-2.  **Alerta en Foreground:** Con la app abierta, comprobar que a los 10 minutos (o el intervalo configurado) se reproduzca el sonido y aparezca el snackbar tradicional.
-3.  **Alerta en Background:** Con tareas pendientes, minimizar la app (o bloquear la pantalla) y comprobar que a los X minutos se reciba una notificación nativa del sistema en la barra de tareas.
-4.  **Cancelación Automática:** Abrir la app tras recibir una notificación nativa, verificar que no suenen las notificaciones posteriores planificadas (cancelación exitosa al resume).
+### Pruebas de Flujo Completo
+1.  **Registro y Generación:** Crear una cuenta nueva y verificar que se genera un código de familia aleatorio y el usuario se asocia correctamente en Firestore `/usuarios` y `/familias`.
+2.  **Invitación y Sincronización:**
+    *   En el Dispositivo A (Papá), ver el código de familia.
+    *   En el Dispositivo B (Mamá), registrarse y elegir "Unirse a Familia", ingresando el código.
+    *   Comprobar que en el Dispositivo B se cargan instantáneamente los perfiles e hijos creados en el Dispositivo A.
+3.  **Acción Cruzada:** Crear una misión en el Dispositivo A y verificar que aparezca en el Dispositivo B en tiempo real.
+4.  **Migración Retrocompatible:** Iniciar sesión con un usuario preexistente (que solo tenía datos en `/familias/{uid}`) y comprobar que entra sin perder perfiles, saldo ni historial, y que sus colecciones han sido movidas exitosamente en segundo plano.

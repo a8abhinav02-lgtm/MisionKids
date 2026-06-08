@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
 import '../../providers/tarea_provider.dart';
 import '../../models/perfil_model.dart';
@@ -18,6 +20,130 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  void _mostrarInfoFamilia(BuildContext context) {
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final famId = authProv.familiaId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF16213E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.people_alt_rounded, color: Colors.amber, size: 28),
+            SizedBox(width: 10),
+            Text(
+              "Familia Compartida",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "¡Administren juntos las misiones de sus hijos!",
+              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "CÓDIGO DE FAMILIA",
+                          style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          famId,
+                          style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, color: Colors.white70),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: famId));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Colors.greenAccent),
+                              const SizedBox(width: 8),
+                              Text("¡Código $famId copiado al portapapeles!"),
+                            ],
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF16213E),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Instrucciones para invitar:",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            _buildInstructionStep("1", "Instala Mission Kids en el otro dispositivo."),
+            _buildInstructionStep("2", "Regístrate y selecciona la opción 'Unirse a Familia Existente'."),
+            _buildInstructionStep("3", "Ingresa este código para sincronizar los datos en tiempo real."),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Entendido", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstructionStep(String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 10,
+            backgroundColor: Colors.amber.withValues(alpha: 0.2),
+            child: Text(
+              number,
+              style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final perfilesProv = Provider.of<PerfilesProvider>(context);
@@ -60,11 +186,21 @@ class _AdminScreenState extends State<AdminScreen> {
                         icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
                         onPressed: () => Navigator.pop(context),
                       ),
-                      const Expanded(
-                        child: Text(
-                          "Panel de Padres",
-                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              "Panel de Padres",
+                              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.share, color: Colors.amber, size: 20),
+                              onPressed: () => _mostrarInfoFamilia(context),
+                              tooltip: "Compartir código de familia",
+                            ),
+                          ],
                         ),
                       ),
                       // BOTÓN AGREGAR HIJO — Ahora prominente y visible
