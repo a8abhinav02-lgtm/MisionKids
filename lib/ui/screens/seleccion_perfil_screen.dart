@@ -22,7 +22,7 @@ class SeleccionPerfilScreen extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (!authProv.existeAdmin) {
+    if (!authProv.existeAdmin || !authProv.estaAutenticado) {
       return const SetupFamiliaScreen();
     }
 
