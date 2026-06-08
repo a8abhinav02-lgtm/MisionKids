@@ -158,8 +158,24 @@ class _AdminScreenState extends State<AdminScreen> {
 
     if (perfiles.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Admin"), backgroundColor: Colors.grey[800]),
-        body: const Center(child: Text("Debes crear al menos un perfil de niño")),
+        appBar: AppBar(title: const Text("Admin"), backgroundColor: const Color(0xFF16213E)),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.family_restroom, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text("Debes crear al menos un perfil de niño", style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                icon: const Icon(Icons.person_add),
+                label: const Text("Crear Perfil"),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FormularioPerfilScreen())),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

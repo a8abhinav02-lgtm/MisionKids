@@ -477,11 +477,22 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                     try {
                       final authProv = Provider.of<AuthProvider>(context, listen: false);
 
-                      // 1. Crear usuario en Firebase Auth primero
-                      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                        email: _emailCtrl.text.trim(),
-                        password: _passCtrl.text,
-                      );
+                      // 1. Intentar iniciar sesión primero, si falla por no existir, crear
+                      try {
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                          email: _emailCtrl.text.trim(),
+                          password: _passCtrl.text,
+                        );
+                      } on FirebaseAuthException catch (e) {
+                        if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+                          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                            email: _emailCtrl.text.trim(),
+                            password: _passCtrl.text,
+                          );
+                        } else {
+                          rethrow;
+                        }
+                      }
                       
                       // 2. Unir el usuario recién creado a la familia existente
                       await authProv.unirseAFamilia(codigo);

@@ -17,23 +17,27 @@ class AuthProvider extends ChangeNotifier {
   bool get estaAutenticado => _usuarioActual != null;
 
   Future<void> inicializar() async {
-    _cajaConfig = await Hive.openBox('caja_auth_v2');
-    _usuarioActual = _auth.currentUser;
-    
-    // Si tenemos usuario, sincronizamos y validamos migración desde la nube
-    if (_usuarioActual != null) {
-      try {
-        await _sincronizarPinDesdeNube();
-      } catch (e) {
-        // En caso de error de red, permitimos iniciar offline si ya tenemos PIN local
-        if (pinPadre.isEmpty) {
-          rethrow;
+    try {
+      _cajaConfig = await Hive.openBox('caja_auth_v2');
+      _usuarioActual = _auth.currentUser;
+
+      // Si tenemos usuario, sincronizamos y validamos migración desde la nube
+      if (_usuarioActual != null) {
+        try {
+          await _sincronizarPinDesdeNube();
+        } catch (e) {
+          // En caso de error (red, permisos, etc.), permitimos iniciar offline
+          // si ya tenemos datos locales. Nunca bloqueamos el inicio.
+          debugPrint('[AuthProvider] Sync error (ignorado): $e');
         }
       }
+    } catch (e) {
+      debugPrint('[AuthProvider] Init error: $e');
+    } finally {
+      // SIEMPRE liberar el estado de carga
+      isLoading = false;
+      notifyListeners();
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
@@ -126,12 +130,15 @@ class AuthProvider extends ChangeNotifier {
       necesitaMigracionOCreacion = true;
     }
 
-    if (!necesitaMigracionOCreacion) {
-      // Todo está bien, la familia existe
+    // SIEMPRE revisar si quedó una migración a medias (documento antiguo aún existe)
+    final oldFamDoc = await _db.collection('familias').doc(_usuarioActual!.uid).get();
+    final bool migracionPendiente = oldFamDoc.exists;
+
+    if (!necesitaMigracionOCreacion && !migracionPendiente) {
+      // Todo está bien, la familia existe y no hay migración pendiente
     } else {
-      // Intentar migrar cuenta clásica a co-parenting
-      final oldFamDoc = await _db.collection('familias').doc(_usuarioActual!.uid).get();
-      if (oldFamDoc.exists) {
+      // Intentar migrar cuenta clásica a co-parenting (o re-intentar)
+      if (migracionPendiente) {
         famId = 'FAM_${_usuarioActual!.uid}';
         
         // A. Crear usuario
@@ -160,7 +167,7 @@ class AuthProvider extends ChangeNotifier {
 
         // Eliminar la familia anterior para no dejar basura
         await _db.collection('familias').doc(_usuarioActual!.uid).delete();
-      } else {
+      } else if (necesitaMigracionOCreacion) {
         // Nueva cuenta de Firebase sin datos de familia y sin usuario (error o cuenta vacía)
         if (famId.isEmpty) {
           final rand = Random();

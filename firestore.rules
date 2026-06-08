@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ======================================================
+    // USUARIOS — Solo el propio usuario puede leer/escribir
+    //            su documento de mapeo uid -> familiaId
+    // ======================================================
+    match /usuarios/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ======================================================
+    // FAMILIAS — Acceso flexible para cubrir:
+    //   1. Documentos nuevos (familiaId = "MK-XXXXXX", padres=[uid])
+    //   2. Documentos migrados (familiaId = "FAM_uid")
+    //   3. Documentos legacy (familiaId = uid, sin campo padres)
+    // ======================================================
+    match /familias/{familiaId} {
+
+      function usuarioAutenticado() {
+        return request.auth != null;
+      }
+
+      // El usuario es propietario si:
+      //   a) Es el UID directamente (formato legacy)
+      //   b) Es "FAM_" + UID (formato migración)
+      //   c) Su UID está en el array padres (formato nuevo co-parenting)
+      function esPropietario() {
+        return request.auth != null && (
+          familiaId == request.auth.uid ||
+          familiaId == ('FAM_' + request.auth.uid) ||
+          ('padres' in resource.data && request.auth.uid in resource.data.padres)
+        );
+      }
+
+      allow read: if esPropietario();
+      allow create: if usuarioAutenticado();
+      allow update: if esPropietario();
+      allow delete: if esPropietario();
+
+      // ======================================================
+      // PERFILES — Subcolección de la familia
+      // ======================================================
+      match /perfiles/{perfilId} {
+        allow read, write: if request.auth != null && (
+          familiaId == request.auth.uid ||
+          familiaId == ('FAM_' + request.auth.uid) ||
+          ('padres' in get(/databases/$(database)/documents/familias/$(familiaId)).data &&
+           request.auth.uid in get(/databases/$(database)/documents/familias/$(familiaId)).data.padres)
+        );
+      }
+
+      // ======================================================
+      // TAREAS — Subcolección de la familia
+      // ======================================================
+      match /tareas/{tareaId} {
+        allow read, write: if request.auth != null && (
+          familiaId == request.auth.uid ||
+          familiaId == ('FAM_' + request.auth.uid) ||
+          ('padres' in get(/databases/$(database)/documents/familias/$(familiaId)).data &&
+           request.auth.uid in get(/databases/$(database)/documents/familias/$(familiaId)).data.padres)
+        );
+      }
+    }
+
+  }
+}
