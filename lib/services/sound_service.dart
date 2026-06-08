@@ -9,8 +9,8 @@ class SoundService {
     
     try {
       _isPlaying = true;
-      // Usamos un sonido corto de la librería pública de Google
-      await _player.play(UrlSource('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'));
+      // Reproduce el sonido de alerta de forma local para funcionamiento offline
+      await _player.play(AssetSource('sounds/beep_short.ogg'));
       
       _player.onPlayerComplete.listen((event) {
         _isPlaying = false;
