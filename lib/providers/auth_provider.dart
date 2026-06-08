@@ -103,9 +103,24 @@ class AuthProvider extends ChangeNotifier {
     // 1. Buscar en la colección /usuarios
     final userDoc = await _db.collection('usuarios').doc(_usuarioActual!.uid).get();
     String famId = '';
+    bool necesitaMigracionOCreacion = false;
 
     if (userDoc.exists) {
       famId = userDoc.data()?['familiaId'] ?? '';
+      if (famId.isNotEmpty) {
+        final famDoc = await _db.collection('familias').doc(famId).get();
+        if (!famDoc.exists) {
+          necesitaMigracionOCreacion = true;
+        }
+      } else {
+        necesitaMigracionOCreacion = true;
+      }
+    } else {
+      necesitaMigracionOCreacion = true;
+    }
+
+    if (!necesitaMigracionOCreacion) {
+      // Todo está bien, la familia existe
     } else {
       // Intentar migrar cuenta clásica a co-parenting
       final oldFamDoc = await _db.collection('familias').doc(_usuarioActual!.uid).get();
@@ -140,8 +155,10 @@ class AuthProvider extends ChangeNotifier {
         await _db.collection('familias').doc(_usuarioActual!.uid).delete();
       } else {
         // Nueva cuenta de Firebase sin datos de familia y sin usuario (error o cuenta vacía)
-        final rand = Random();
-        famId = 'MK-${100000 + rand.nextInt(900000)}';
+        if (famId.isEmpty) {
+          final rand = Random();
+          famId = 'MK-${100000 + rand.nextInt(900000)}';
+        }
         await _db.collection('usuarios').doc(_usuarioActual!.uid).set({
           'email': _usuarioActual!.email ?? '',
           'familiaId': famId,
