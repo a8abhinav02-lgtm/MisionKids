@@ -24,7 +24,7 @@ class SeleccionPerfilScreen extends StatelessWidget {
 
     final perfiles = perfilesProv.todosLosPerfiles;
 
-    if (!authProv.existeAdmin || !authProv.estaAutenticado || perfiles.isEmpty) {
+    if (!authProv.existeAdmin || !authProv.estaAutenticado) {
       return const SetupFamiliaScreen();
     }
 
