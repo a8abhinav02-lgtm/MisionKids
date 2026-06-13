@@ -1,29 +1,37 @@
-# Checklist: Mission Kids - Consolidación 🏁
+# Checklist de Mejoras DOFA: Mission Kids 🏁
 
-## Fase 1-3: Base y Multiperfil ✅
-- [x] Migración a Flutter 3.x.
-- [x] Arquitectura de proveedores (Provider).
-- [x] Soporte para múltiples perfiles con temáticas y colores.
+Este listado agrupa las oportunidades de mejora identificadas en el diagnóstico de producción del proyecto, organizadas por prioridad de ejecución.
 
-## Fase 4: Cloud & Sync ✅
-- [x] Integración completa con Firebase Firestore.
-- [x] Persistencia híbrida (Hive para local + Firestore para Cloud).
-- [x] Sincronización en tiempo real entre múltiples dispositivos.
+## Prioridad Alta: Estabilización y Onboarding ✅
+- [x] **Desbloqueo de registro familiar**
+  - [x] Crear rama de trabajo `feature/desbloqueo-registro`.
+  - [x] Cambiar estado predeterminado de `aprobado` a `true` al registrarse en `auth_provider.dart`.
+  - [x] Corregir advertencias de compilación en `perfiles_provider.dart`, `tarea_provider.dart` y `home_nino_screen.dart`.
+  - [x] Verificar que el análisis de Flutter pase sin errores ni warnings.
+- [x] **Empaquetado de recursos de sonido local**
+  - [x] Crear carpeta de assets y descargar sonido de alerta `beep_short.ogg`.
+  - [x] Registrar el archivo en el bloque `assets:` de `pubspec.yaml`.
+  - [x] Actualizar `SoundService` para utilizar `AssetSource` en lugar de `UrlSource`.
+  - [x] Confirmar funcionamiento offline del audio.
 
-## Fase 5: Reglas de Negocio ✅
-- [x] Lógica de activación por franjas horarias.
-- [x] Restricción de misiones obligatorias (Llaves 🔑).
-- [x] Feedback visual con confeti y mensajes motivacionales.
+## Prioridad Media: Experiencia y Seguridad 🛠️
+- [x] **Recordatorios de misiones en segundo plano (App Cerrada)**
+  - [x] Agregar dependencias `flutter_local_notifications` y `timezone` en `pubspec.yaml`.
+  - [x] Configurar permisos nativos en `AndroidManifest.xml` (Android) y `Info.plist` (iOS).
+  - [x] Implementar un servicio de notificaciones locales (`NotificationService`).
+  - [x] Integrar `WidgetsBindingObserver` en `ReminderService` para programar notificaciones locales en intervalos cuando la app pasa al segundo plano (background) si hay tareas pendientes.
+  - [x] Cancelar todas las notificaciones programadas al regresar al primer plano (foreground) o cuando se completen las tareas.
+  - [x] Validar el correcto funcionamiento de las alertas nativas.
+- [ ] **Encriptación de credenciales locales (PIN de Padres)**
+  - [ ] Agregar dependencias `flutter_secure_storage` y configurar caja encriptada de Hive.
+  - [ ] Migrar el PIN del padre existente a almacenamiento seguro.
+  - [ ] Asegurar lectura y escritura encriptada en el flujo de verificación.
 
-## Fase 6: Deployment & Web ✅
-- [x] Configuración de Firebase Web (firebase_options.dart).
-- [x] Creación de build script para Cloudflare.
-- [x] Rebranding completo a "Mission Kids".
-- [x] Despliegue exitoso en Cloudflare Pages.
-
-## Fase 7: Fase de Pruebas (Beta) 🛠️
-- [ ] Validación de flujos reales con usuarios finales (niños).
-- [ ] Monitoreo de cuotas de base de datos.
-- [ ] Recolección de feedback para futuras misiones.
-
-**Estado Final:** 🚀 Listo para producción.
+## Prioridad Baja: Escalabilidad y Analíticas 📈
+- [ ] **Gráficos de hábitos para padres**
+  - [ ] Agregar dependencia `fl_chart`.
+  - [ ] Crear vista de analíticas en la Zona de Padres con resúmenes semanales de cumplimiento.
+- [ ] **Notificaciones Push cruzadas (Firebase Cloud Messaging)**
+  - [ ] Configurar Firebase Cloud Messaging en la consola de Firebase.
+  - [ ] Integrar permisos y token de notificaciones FCM.
+  - [ ] Implementar envío de alertas cruzadas (Aprobaciones/Nuevos retos).

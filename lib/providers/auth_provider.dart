@@ -51,14 +51,14 @@ class AuthProvider extends ChangeNotifier {
         'pin_padre': pin,
         'email_padre': email,
         'fecha_creacion': FieldValue.serverTimestamp(),
-        'aprobado': false, // Nuevos usuarios requieren aprobación
+        'aprobado': true, // Nuevos usuarios se auto-aprueban por defecto
       });
 
       // 3. Guardar localmente para acceso rápido offline
       await _cajaConfig!.put('pin_padre', pin);
       await _cajaConfig!.put('email_padre', email);
       await _cajaConfig!.put('setup_completo', true);
-      await _cajaConfig!.put('aprobado', false);
+      await _cajaConfig!.put('aprobado', true);
 
       notifyListeners();
     } catch (e) {

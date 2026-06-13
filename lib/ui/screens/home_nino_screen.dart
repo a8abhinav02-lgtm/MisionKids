@@ -7,8 +7,8 @@ import '../../providers/perfiles_provider.dart';
 import '../../providers/tarea_provider.dart';
 import '../../models/tarea_model.dart';
 import '../../models/perfil_model.dart';
-import '../../models/perfil_model.dart';
 import '../themes/app_theme.dart';
+import '../../services/notification_service.dart';
 import 'historial_screen.dart';
 
 class HomeNinoScreen extends StatefulWidget {
@@ -25,6 +25,8 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    // Solicitar permisos de notificación nativos al entrar al perfil del niño
+    NotificationService.solicitarPermisos();
   }
 
   @override

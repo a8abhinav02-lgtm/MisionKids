@@ -10,6 +10,7 @@ import 'providers/auth_provider.dart';
 import 'providers/perfiles_provider.dart';
 import 'providers/tarea_provider.dart';
 import 'services/reminder_service.dart';
+import 'services/notification_service.dart';
 import 'ui/screens/seleccion_perfil_screen.dart';
 
 void main() async {
@@ -21,6 +22,9 @@ void main() async {
   
   Hive.registerAdapter(TareaAdapter());
   Hive.registerAdapter(PerfilAdapter());
+  
+  // Inicializar servicio de notificaciones locales
+  await NotificationService.inicializar();
   
   runApp(const MiAppTareas());
 }
