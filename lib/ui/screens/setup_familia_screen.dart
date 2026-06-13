@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
@@ -23,9 +24,11 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
 
   String _colorSeleccionado = 'azul';
   String _avatarSeleccionado = 'astronauta';
-  int _step = -1; // -1 = Elección Inicial, 0 = Cuenta, 1 = PIN, 2 = Perfil del hijo
+  int _step = -1; // -1 = Elección Inicial, 0 = Cuenta, 1 = PIN, 2 = Perfil del hijo, 3 = Código familiar (Join)
   bool _isCargando = false;
   bool _isLoginFlow = false;
+  bool _isJoinFlow = false;
+  final _codigoFamiliaCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +102,13 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                         ),
                         child: _isLoginFlow 
                           ? _buildLoginStep() 
-                          : (_step == 0 ? _buildEmailStep() : (_step == 1 ? _buildPinStep() : _buildPerfilStep())),
+                          : (_step == 0 
+                              ? _buildEmailStep() 
+                              : (_step == 1 
+                                  ? _buildPinStep() 
+                                  : (_step == 2 
+                                      ? _buildPerfilStep() 
+                                      : _buildJoinStep()))),
                       ),
                     ],
                   ],
@@ -122,7 +131,7 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
           subtitle: "Crea tu cuenta de administrador y los perfiles de tus hijos por primera vez.",
           icon: Icons.rocket_launch,
           color: Colors.amber,
-          onTap: () => setState(() { _step = 0; _isLoginFlow = false; }),
+          onTap: () => setState(() { _step = 0; _isLoginFlow = false; _isJoinFlow = false; }),
         ),
         const SizedBox(height: 20),
         _ChoiceCard(
@@ -130,7 +139,15 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
           subtitle: "Ya tienes una cuenta en otro dispositivo. Ingresa para descargar tus datos.",
           icon: Icons.cloud_download,
           color: Colors.blue,
-          onTap: () => setState(() { _step = 0; _isLoginFlow = true; }),
+          onTap: () => setState(() { _step = 0; _isLoginFlow = true; _isJoinFlow = false; }),
+        ),
+        const SizedBox(height: 20),
+        _ChoiceCard(
+          title: "Unirse a Familia Existente",
+          subtitle: "Otro padre ya configuró la familia. Regístrate e ingresa su código.",
+          icon: Icons.group_add,
+          color: Colors.indigo,
+          onTap: () => setState(() { _step = 0; _isLoginFlow = false; _isJoinFlow = true; }),
         ),
       ],
     );
@@ -224,7 +241,11 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Email inválido o contraseña corta (min 6)")));
                     return;
                   }
-                  setState(() => _step = 1);
+                  if (_isJoinFlow) {
+                    setState(() => _step = 3);
+                  } else {
+                    setState(() => _step = 1);
+                  }
                 },
                 child: const Text("SIGUIENTE →", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -400,6 +421,93 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                     }
                   },
                   child: const Text("CREAR CUENTA 🚀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildJoinStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.indigo.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.group_add, color: Colors.indigo),
+            ),
+            const SizedBox(width: 12),
+            const Text("Paso 2: Código Familiar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text("Ingresa el código de familia compartido por el otro administrador.", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _codigoFamiliaCtrl,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: "Código de Familia (ej: MK-123456)",
+            prefixIcon: Icon(Icons.vpn_key_rounded),
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (_isCargando)
+          const Center(child: CircularProgressIndicator())
+        else
+          Row(
+            children: [
+              Expanded(child: OutlinedButton(onPressed: () => setState(() => _step = 0), child: const Text("ATRÁS"))),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  onPressed: () async {
+                    final codigo = _codigoFamiliaCtrl.text.trim().toUpperCase();
+                    if (codigo.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ingresa el código de familia")));
+                      return;
+                    }
+                    setState(() => _isCargando = true);
+                    try {
+                      final authProv = Provider.of<AuthProvider>(context, listen: false);
+
+                      // 1. Intentar iniciar sesión primero, si falla por no existir, crear
+                      try {
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                          email: _emailCtrl.text.trim(),
+                          password: _passCtrl.text,
+                        );
+                      } on FirebaseAuthException catch (e) {
+                        if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+                          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                            email: _emailCtrl.text.trim(),
+                            password: _passCtrl.text,
+                          );
+                        } else {
+                          rethrow;
+                        }
+                      }
+                      
+                      // 2. Unir el usuario recién creado a la familia existente
+                      await authProv.unirseAFamilia(codigo);
+
+                      if (mounted) {
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                      }
+                    } catch (e) {
+                      setState(() => _isCargando = false);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
+                      }
+                    }
+                  },
+                  child: const Text("UNIRSE A FAMILIA 👥", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],

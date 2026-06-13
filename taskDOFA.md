@@ -13,6 +13,15 @@ Este listado agrupa las oportunidades de mejora identificadas en el diagnóstico
   - [x] Registrar el archivo en el bloque `assets:` de `pubspec.yaml`.
   - [x] Actualizar `SoundService` para utilizar `AssetSource` en lugar de `UrlSource`.
   - [x] Confirmar funcionamiento offline del audio.
+- [x] **Cuentas Compartidas (Co-parenting) / Multi-administrador**
+  - [x] Crear rama de trabajo `feature/cuentas-compartidas`.
+  - [x] Rediseñar base de datos en Firestore (Esquema `/usuarios` y `/familias/{familiaId}`).
+  - [x] Crear mapeo de familias y código legible de familia (`MK-XXXXXX`) en `auth_provider.dart`.
+  - [x] Implementar migración silenciosa para cuentas de familias clásicas `/familias/{uid}` a `/familias/FAM_{uid}`.
+  - [x] Renombrar llamadas y enlazar `PerfilesProvider` y `TareaProvider` a `familiaId` en lugar de `uid`.
+  - [x] Modificar `setup_familia_screen.dart` para agregar la opción "Unirse a Familia Existente" con registro y validación de código.
+  - [x] Actualizar `admin_screen.dart` para mostrar el código de familia compartida en la Zona de Padres con opción de copiar.
+  - [x] Validar y compilar sin advertencias.
 
 ## Prioridad Media: Experiencia y Seguridad 🛠️
 - [x] **Recordatorios de misiones en segundo plano (App Cerrada)**

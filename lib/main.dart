@@ -39,11 +39,11 @@ class MiAppTareas extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()..inicializar()),
         ChangeNotifierProxyProvider<AuthProvider, PerfilesProvider>(
           create: (_) => PerfilesProvider(),
-          update: (_, auth, perfiles) => perfiles!..updateUid(auth.uid)..inicializar(),
+          update: (_, auth, perfiles) => perfiles!..updateFamiliaId(auth.familiaId)..inicializar(),
         ),
         ChangeNotifierProxyProvider<AuthProvider, TareaProvider>(
           create: (_) => TareaProvider(),
-          update: (_, auth, tareas) => tareas!..updateUid(auth.uid)..inicializar(),
+          update: (_, auth, tareas) => tareas!..updateFamiliaId(auth.familiaId)..inicializar(),
         ),
       ],
       child: ReminderService(

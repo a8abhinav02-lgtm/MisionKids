@@ -20,9 +20,9 @@ class PerfilesProvider extends ChangeNotifier {
     return _perfilesFirestore.isNotEmpty ? _perfilesFirestore : (_cajaPerfiles?.values.toList() ?? []);
   }
 
-  void updateUid(String newUid) {
-    if (_uid != newUid) {
-      _uid = newUid;
+  void updateFamiliaId(String newFamiliaId) {
+    if (_uid != newFamiliaId) {
+      _uid = newFamiliaId;
       if (_uid.isNotEmpty) {
         _escucharPerfiles();
       }

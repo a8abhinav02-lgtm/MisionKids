@@ -22,9 +22,9 @@ class TareaProvider extends ChangeNotifier {
     return _tareasFirestore.isNotEmpty ? _tareasFirestore : (_cajaTareas?.values.toList() ?? []);
   }
 
-  void updateUid(String newUid) {
-    if (_uid != newUid) {
-      _uid = newUid;
+  void updateFamiliaId(String newFamiliaId) {
+    if (_uid != newFamiliaId) {
+      _uid = newFamiliaId;
       if (_uid.isNotEmpty) {
         _escucharTareas();
       }

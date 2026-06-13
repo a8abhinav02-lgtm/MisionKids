@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,22 +17,39 @@ class AuthProvider extends ChangeNotifier {
   bool get estaAutenticado => _usuarioActual != null;
 
   Future<void> inicializar() async {
-    _cajaConfig = await Hive.openBox('caja_auth_v2');
-    _usuarioActual = _auth.currentUser;
-    
-    // Si tenemos usuario pero no PIN local, intentamos traerlo de Firestore
-    if (_usuarioActual != null && pinPadre.isEmpty) {
-      await _sincronizarPinDesdeNube();
-    }
+    try {
+      _cajaConfig = await Hive.openBox('caja_auth_v2');
+      _usuarioActual = _auth.currentUser;
 
-    isLoading = false;
-    notifyListeners();
+      // Si tenemos usuario, sincronizamos y validamos migración desde la nube
+      if (_usuarioActual != null) {
+        try {
+          await _sincronizarPinDesdeNube();
+        } catch (e) {
+          // En caso de error (red, permisos, etc.), permitimos iniciar offline
+          // si ya tenemos datos locales. Nunca bloqueamos el inicio.
+          debugPrint('[AuthProvider] Sync error (ignorado): $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] Init error: $e');
+    } finally {
+      // SIEMPRE liberar el estado de carga
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
   String get pinPadre => _cajaConfig?.get('pin_padre', defaultValue: '') ?? '';
   String get emailPadre => _cajaConfig?.get('email_padre', defaultValue: '') ?? '';
   bool get estaAprobado => _cajaConfig?.get('aprobado', defaultValue: true) ?? true;
+
+  String get familiaId {
+    final cached = _cajaConfig?.get('familia_id', defaultValue: '') ?? '';
+    if (cached.isNotEmpty) return cached;
+    return uid.isNotEmpty ? 'FAM_$uid' : '';
+  }
 
   Future<void> registrarAdmin({
     required String email,
@@ -46,19 +64,32 @@ class AuthProvider extends ChangeNotifier {
       );
       _usuarioActual = credential.user;
 
-      // 2. Guardar en Firestore la config de la familia
-      await _db.collection('familias').doc(_usuarioActual!.uid).set({
+      // Generar ID de familia único legible (MK-XXXXXX)
+      final rand = Random();
+      final randCode = 'MK-${100000 + rand.nextInt(900000)}';
+
+      // 2. Guardar en Firestore el mapeo usuario -> familia
+      await _db.collection('usuarios').doc(_usuarioActual!.uid).set({
+        'email': email,
+        'familiaId': randCode,
+        'fecha_registro': FieldValue.serverTimestamp(),
+      });
+
+      // 3. Guardar en Firestore la config de la familia
+      await _db.collection('familias').doc(randCode).set({
         'pin_padre': pin,
         'email_padre': email,
         'fecha_creacion': FieldValue.serverTimestamp(),
         'aprobado': true, // Nuevos usuarios se auto-aprueban por defecto
+        'padres': [_usuarioActual!.uid],
       });
 
-      // 3. Guardar localmente para acceso rápido offline
+      // 4. Guardar localmente para acceso rápido offline
       await _cajaConfig!.put('pin_padre', pin);
       await _cajaConfig!.put('email_padre', email);
       await _cajaConfig!.put('setup_completo', true);
       await _cajaConfig!.put('aprobado', true);
+      await _cajaConfig!.put('familia_id', randCode);
 
       notifyListeners();
     } catch (e) {
@@ -79,14 +110,127 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _sincronizarPinDesdeNube() async {
     if (_usuarioActual == null) return;
-    final doc = await _db.collection('familias').doc(_usuarioActual!.uid).get();
-    if (doc.exists) {
-      final data = doc.data()!;
-      await _cajaConfig!.put('pin_padre', data['pin_padre']);
-      await _cajaConfig!.put('email_padre', data['email_padre']);
-      await _cajaConfig!.put('setup_completo', true);
-      await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+
+    // 1. Buscar en la colección /usuarios
+    final userDoc = await _db.collection('usuarios').doc(_usuarioActual!.uid).get();
+    String famId = '';
+    bool necesitaMigracionOCreacion = false;
+
+    if (userDoc.exists) {
+      famId = userDoc.data()?['familiaId'] ?? '';
+      if (famId.isNotEmpty) {
+        final famDoc = await _db.collection('familias').doc(famId).get();
+        if (!famDoc.exists) {
+          necesitaMigracionOCreacion = true;
+        }
+      } else {
+        necesitaMigracionOCreacion = true;
+      }
+    } else {
+      necesitaMigracionOCreacion = true;
     }
+
+    // SIEMPRE revisar si quedó una migración a medias (documento antiguo aún existe)
+    final oldFamDoc = await _db.collection('familias').doc(_usuarioActual!.uid).get();
+    final bool migracionPendiente = oldFamDoc.exists;
+
+    if (!necesitaMigracionOCreacion && !migracionPendiente) {
+      // Todo está bien, la familia existe y no hay migración pendiente
+    } else {
+      // Intentar migrar cuenta clásica a co-parenting (o re-intentar)
+      if (migracionPendiente) {
+        famId = 'FAM_${_usuarioActual!.uid}';
+        
+        // A. Crear usuario
+        await _db.collection('usuarios').doc(_usuarioActual!.uid).set({
+          'email': _usuarioActual!.email ?? '',
+          'familiaId': famId,
+          'fecha_registro': FieldValue.serverTimestamp(),
+        });
+
+        // B. Clonar datos de familia al nuevo ID
+        final oldData = oldFamDoc.data()!;
+        oldData['padres'] = [_usuarioActual!.uid];
+        await _db.collection('familias').doc(famId).set(oldData);
+
+        // C. Clonar subcolecciones (perfiles y tareas)
+        // Clonar perfiles
+        final perfilesSnapshot = await _db.collection('familias').doc(_usuarioActual!.uid).collection('perfiles').get();
+        for (var doc in perfilesSnapshot.docs) {
+          await _db.collection('familias').doc(famId).collection('perfiles').doc(doc.id).set(doc.data());
+        }
+        // Clonar tareas
+        final tareasSnapshot = await _db.collection('familias').doc(_usuarioActual!.uid).collection('tareas').get();
+        for (var doc in tareasSnapshot.docs) {
+          await _db.collection('familias').doc(famId).collection('tareas').doc(doc.id).set(doc.data());
+        }
+
+        // Eliminar la familia anterior para no dejar basura
+        await _db.collection('familias').doc(_usuarioActual!.uid).delete();
+      } else if (necesitaMigracionOCreacion) {
+        // Nueva cuenta de Firebase sin datos de familia y sin usuario (error o cuenta vacía)
+        if (famId.isEmpty) {
+          final rand = Random();
+          famId = 'MK-${100000 + rand.nextInt(900000)}';
+        }
+        await _db.collection('usuarios').doc(_usuarioActual!.uid).set({
+          'email': _usuarioActual!.email ?? '',
+          'familiaId': famId,
+          'fecha_registro': FieldValue.serverTimestamp(),
+        });
+        await _db.collection('familias').doc(famId).set({
+          'pin_padre': '0000', // PIN provisional
+          'email_padre': _usuarioActual!.email ?? '',
+          'fecha_creacion': FieldValue.serverTimestamp(),
+          'aprobado': true,
+          'padres': [_usuarioActual!.uid],
+        });
+      }
+    }
+
+    if (famId.isNotEmpty) {
+      final doc = await _db.collection('familias').doc(famId).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        await _cajaConfig!.put('pin_padre', data['pin_padre']);
+        await _cajaConfig!.put('email_padre', data['email_padre']);
+        await _cajaConfig!.put('setup_completo', true);
+        await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+        await _cajaConfig!.put('familia_id', famId);
+      }
+    }
+  }
+
+  Future<void> unirseAFamilia(String codigoFamilia) async {
+    if (_usuarioActual == null) return;
+    
+    // 1. Verificar que la familia exista
+    final famDoc = await _db.collection('familias').doc(codigoFamilia).get();
+    if (!famDoc.exists) {
+      throw Exception("El código de familia no es válido ⛔");
+    }
+
+    // 2. Crear/Actualizar usuario
+    await _db.collection('usuarios').doc(_usuarioActual!.uid).set({
+      'email': _usuarioActual!.email ?? '',
+      'familiaId': codigoFamilia,
+      'fecha_registro': FieldValue.serverTimestamp(),
+    });
+
+    // 3. Añadir a la lista de padres en la familia
+    await _db.collection('familias').doc(codigoFamilia).update({
+      'padres': FieldValue.arrayUnion([_usuarioActual!.uid]),
+    });
+
+    // 4. Sincronizar localmente
+    final data = famDoc.data()!;
+    await _cajaConfig!.put('pin_padre', data['pin_padre']);
+    await _cajaConfig!.put('email_padre', data['email_padre']);
+    await _cajaConfig!.put('setup_completo', true);
+    await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+    await _cajaConfig!.put('familia_id', codigoFamilia);
+
+    notifyListeners();
   }
 
   Future<void> recomprobarAprobacion() async {

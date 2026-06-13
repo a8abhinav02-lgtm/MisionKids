@@ -22,15 +22,15 @@ class SeleccionPerfilScreen extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (!authProv.existeAdmin) {
+    final perfiles = perfilesProv.todosLosPerfiles;
+
+    if (!authProv.existeAdmin || !authProv.estaAutenticado) {
       return const SetupFamiliaScreen();
     }
 
     if (!authProv.estaAprobado) {
       return const EsperandoAprobacionScreen();
     }
-
-    final perfiles = perfilesProv.todosLosPerfiles;
 
     return Scaffold(
       body: Container(
