@@ -119,74 +119,76 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "¡Administren juntos las misiones de sus hijos!",
-              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "¡Administren juntos las misiones de sus hijos!",
+                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "CÓDIGO DE FAMILIA",
-                          style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          famId,
-                          style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy_rounded, color: Colors.white70),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: famId));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_outline, color: Colors.greenAccent),
-                              const SizedBox(width: 8),
-                              Text("¡Código $famId copiado al portapapeles!"),
-                            ],
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "CÓDIGO DE FAMILIA",
+                            style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                           ),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: const Color(0xFF16213E),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                          const SizedBox(height: 4),
+                          SelectableText(
+                            famId,
+                            style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy_rounded, color: Colors.white70),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: famId));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: Colors.greenAccent),
+                                const SizedBox(width: 8),
+                                Text("¡Código $famId copiado al portapapeles!"),
+                              ],
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF16213E),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "Instrucciones para invitar:",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            _buildInstructionStep("1", "Instala Mission Kids en el otro dispositivo."),
-            _buildInstructionStep("2", "Regístrate y selecciona la opción 'Unirse a Familia Existente'."),
-            _buildInstructionStep("3", "Ingresa este código para sincronizar los datos en tiempo real."),
-          ],
+              const SizedBox(height: 16),
+              const Text(
+                "Instrucciones para invitar:",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              _buildInstructionStep("1", "Instala Mission Kids en el otro dispositivo."),
+              _buildInstructionStep("2", "Regístrate y selecciona la opción 'Unirse a Familia Existente'."),
+              _buildInstructionStep("3", "Ingresa este código para sincronizar los datos en tiempo real."),
+            ],
+          ),
         ),
         actions: [
           TextButton(
