@@ -31,6 +31,28 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
   final _codigoFamiliaCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _autofillCodeFromUrl();
+  }
+
+  void _autofillCodeFromUrl() {
+    try {
+      final code = Uri.base.queryParameters['code'] ?? Uri.base.queryParameters['joinCode'];
+      if (code != null && code.isNotEmpty) {
+        _codigoFamiliaCtrl.text = code;
+        setState(() {
+          _step = 0;
+          _isLoginFlow = false;
+          _isJoinFlow = true;
+        });
+      }
+    } catch (e) {
+      // Ignorar errores
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(

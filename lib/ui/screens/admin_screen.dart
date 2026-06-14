@@ -29,16 +29,18 @@ class _AdminScreenState extends State<AdminScreen> {
   void _compartirFamilia(BuildContext context) async {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final famId = authProv.familiaId;
-    const String linkWeb = "https://misionkids.pages.dev";
+    const String linkWeb = "https://misionkids.a8abhinav02.workers.dev";
     
     final String mensaje = 
         "¡Únete a nuestra familia en Mission Kids! 👥\n\n"
-        "🔑 Código de Familia: $famId\n"
-        "🌐 Acceso Web: $linkWeb\n\n"
-        "Instrucciones para ingresar:\n"
-        "1. Abre el enlace en tu navegador o abre la App.\n"
-        "2. Regístrate y selecciona 'Unirse a Familia Existente'.\n"
-        "3. Ingresa nuestro código para sincronizar los datos en tiempo real. 🚀";
+        "Acceso directo (Auto-completar):\n"
+        "🌐 $linkWeb/?code=$famId\n\n"
+        "O ingresa manualmente el código:\n"
+        "🔑 `$famId`\n\n"
+        "Instrucciones:\n"
+        "1. Abre el enlace de arriba (se auto-completará el código en la pantalla).\n"
+        "2. Crea tu cuenta o inicia sesión.\n"
+        "3. ¡Listo! Ya estarán sincronizados en tiempo real. 🚀";
 
     try {
       final result = await SharePlus.instance.share(
