@@ -21,6 +21,11 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  String _formatFamiliaId(String id) {
+    if (id.length <= 15) return id;
+    return "${id.substring(0, 10)}...${id.substring(id.length - 4)}";
+  }
+
   void _compartirFamilia(BuildContext context) async {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final famId = authProv.familiaId;
@@ -303,9 +308,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      "Código: $famId",
-                                      style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
+                                    Flexible(
+                                      child: Text(
+                                        "Código: ${_formatFamiliaId(famId)}",
+                                        style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
                                     ),
                                     const SizedBox(width: 4),
                                     const Icon(Icons.info_outline, color: Colors.white54, size: 11),
