@@ -195,11 +195,13 @@ class _AdminScreenState extends State<AdminScreen> {
               children: [
                 // Custom App Bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                   child: Row(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
@@ -209,10 +211,12 @@ class _AdminScreenState extends State<AdminScreen> {
                           children: [
                             const Text(
                               "Panel de Padres",
-                              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
                             ),
                             IconButton(
                               icon: const Icon(Icons.share, color: Colors.amber, size: 20),
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                               onPressed: () => _mostrarInfoFamilia(context),
                               tooltip: "Compartir código de familia",
                             ),
@@ -226,7 +230,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FormularioPerfilScreen())),
                           borderRadius: BorderRadius.circular(14),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(colors: [Color(0xFF00B4D8), Color(0xFF0077B6)]),
                               borderRadius: BorderRadius.circular(14),
@@ -237,9 +241,9 @@ class _AdminScreenState extends State<AdminScreen> {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.person_add, color: Colors.white, size: 20),
-                                SizedBox(width: 6),
-                                Text("Hijo", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                Icon(Icons.person_add, color: Colors.white, size: 18),
+                                SizedBox(width: 4),
+                                Text("Hijo", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                               ],
                             ),
                           ),
