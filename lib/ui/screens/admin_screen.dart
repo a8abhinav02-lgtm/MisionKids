@@ -185,6 +185,39 @@ class _AdminScreenState extends State<AdminScreen> {
               _buildInstructionStep("1", "Instala Mission Kids en el otro dispositivo."),
               _buildInstructionStep("2", "Regístrate y selecciona la opción 'Unirse a Familia Existente'."),
               _buildInstructionStep("3", "Ingresa este código para sincronizar los datos en tiempo real."),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: const Color(0xFF16213E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.link, size: 18),
+                      label: const Text("Compartir App"),
+                      onPressed: () => _compartirEnlaceApp(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.vpn_key, size: 18),
+                      label: const Text("Código Solo"),
+                      onPressed: () => _compartirCodigoFamiliar(context),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -192,26 +225,6 @@ class _AdminScreenState extends State<AdminScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text("Cerrar", style: TextStyle(color: Colors.white70)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: const Color(0xFF16213E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.link, size: 18),
-            label: const Text("App"),
-            onPressed: () => _compartirEnlaceApp(context),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.vpn_key, size: 18),
-            label: const Text("Código"),
-            onPressed: () => _compartirCodigoFamiliar(context),
           ),
         ],
       ),
