@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
@@ -20,6 +21,57 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  void _compartirFamilia(BuildContext context) async {
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final famId = authProv.familiaId;
+    const String linkWeb = "https://misionkids.pages.dev";
+    
+    final String mensaje = 
+        "¡Únete a nuestra familia en Mission Kids! 👥\n\n"
+        "🔑 Código de Familia: $famId\n"
+        "🌐 Acceso Web: $linkWeb\n\n"
+        "Instrucciones para ingresar:\n"
+        "1. Abre el enlace en tu navegador o abre la App.\n"
+        "2. Regístrate y selecciona 'Unirse a Familia Existente'.\n"
+        "3. Ingresa nuestro código para sincronizar los datos en tiempo real. 🚀";
+
+    try {
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          text: mensaje,
+          subject: "Código de Familia - Mission Kids",
+        ),
+      );
+      if (result.status == ShareResultStatus.dismissed) {
+        // Compartido cancelado
+      }
+    } catch (e) {
+      // Fallback si no está soportado (navegadores locales o antiguos)
+      await Clipboard.setData(ClipboardData(text: mensaje));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.copy_all_rounded, color: Colors.amber),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "¡Copiado al portapapeles! Listo para pegar y enviar a tu familiar.",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF16213E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
+  }
+
   void _mostrarInfoFamilia(BuildContext context) {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final famId = authProv.familiaId;
@@ -109,9 +161,22 @@ class _AdminScreenState extends State<AdminScreen> {
           ],
         ),
         actions: [
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: const Color(0xFF16213E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.share, size: 18),
+            label: const Text("Compartir", style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _compartirFamilia(context);
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Entendido", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+            child: const Text("Cerrar", style: TextStyle(color: Colors.white70)),
           ),
         ],
       ),
@@ -146,6 +211,8 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProv = Provider.of<AuthProvider>(context);
+    final famId = authProv.familiaId;
     final perfilesProv = Provider.of<PerfilesProvider>(context);
     final perfiles = perfilesProv.todosLosPerfiles;
     final tareaProv = Provider.of<TareaProvider>(context);
@@ -205,20 +272,46 @@ class _AdminScreenState extends State<AdminScreen> {
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
-                        child: Row(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              "Panel de Padres",
-                              style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  "Panel de Padres",
+                                  style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.share, color: Colors.amber, size: 20),
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  onPressed: () => _compartirFamilia(context),
+                                  tooltip: "Compartir código de familia",
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.share, color: Colors.amber, size: 20),
-                              padding: const EdgeInsets.all(6),
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              onPressed: () => _mostrarInfoFamilia(context),
-                              tooltip: "Compartir código de familia",
+                            const SizedBox(height: 2),
+                            InkWell(
+                              onTap: () => _mostrarInfoFamilia(context),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Código: $famId",
+                                      style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.info_outline, color: Colors.white54, size: 11),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
