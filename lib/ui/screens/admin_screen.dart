@@ -33,14 +33,14 @@ class _AdminScreenState extends State<AdminScreen> {
     
     final String mensaje = 
         "¡Únete a nuestra familia en Mission Kids! 👥\n\n"
-        "Acceso directo (Auto-completar):\n"
-        "🌐 $linkWeb/?code=$famId\n\n"
-        "O ingresa manualmente el código:\n"
-        "🔑 `$famId`\n\n"
+        "👉 Toca este enlace para entrar directamente (el código se auto-completará):\n"
+        "$linkWeb/?code=$famId\n\n"
         "Instrucciones:\n"
-        "1. Abre el enlace de arriba (se auto-completará el código en la pantalla).\n"
+        "1. Abre el enlace de arriba.\n"
         "2. Crea tu cuenta o inicia sesión.\n"
-        "3. ¡Listo! Ya estarán sincronizados en tiempo real. 🚀";
+        "3. ¡Listo! Ya estarán sincronizados en tiempo real. 🚀\n\n"
+        "Si el enlace no te funciona, ingresa manualmente este código:\n"
+        "$famId";
 
     try {
       final result = await SharePlus.instance.share(

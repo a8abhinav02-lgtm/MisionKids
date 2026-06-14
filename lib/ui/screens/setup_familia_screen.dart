@@ -38,7 +38,16 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
 
   void _autofillCodeFromUrl() {
     try {
-      final code = Uri.base.queryParameters['code'] ?? Uri.base.queryParameters['joinCode'];
+      final url = Uri.base.toString();
+      String? code = Uri.base.queryParameters['code'] ?? Uri.base.queryParameters['joinCode'];
+      
+      if (code == null || code.isEmpty) {
+        final match = RegExp(r'[?&](?:code|joinCode)=([^&#]+)').firstMatch(url);
+        if (match != null) {
+          code = match.group(1);
+        }
+      }
+
       if (code != null && code.isNotEmpty) {
         _codigoFamiliaCtrl.text = code;
         setState(() {

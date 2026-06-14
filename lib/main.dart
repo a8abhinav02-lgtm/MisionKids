@@ -14,8 +14,11 @@ import 'services/reminder_service.dart';
 import 'services/notification_service.dart';
 import 'ui/screens/seleccion_perfil_screen.dart';
 
+import 'package:flutter_web_plugins/url_strategy.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
