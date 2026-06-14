@@ -192,10 +192,29 @@ class AuthProvider extends ChangeNotifier {
       final doc = await _db.collection('familias').doc(famId).get();
       if (doc.exists) {
         final data = doc.data()!;
+        
+        bool estaAprobadoGeneral = data['aprobado'] ?? true;
+        bool esPendiente = false;
+        if (data.containsKey('padres_pendientes')) {
+           final pendientes = List.from(data['padres_pendientes']);
+           esPendiente = pendientes.contains(_usuarioActual!.uid);
+        }
+        
+        bool enPadres = false;
+        if (data.containsKey('padres')) {
+           final padres = List.from(data['padres']);
+           enPadres = padres.contains(_usuarioActual!.uid);
+        } else {
+           // Fallback temporal para familias antiguas que no tengan el array
+           enPadres = true;
+        }
+
+        bool aprobadoFinal = estaAprobadoGeneral && (!esPendiente) && enPadres;
+
         await _cajaConfig!.put('pin_padre', data['pin_padre']);
         await _cajaConfig!.put('email_padre', data['email_padre']);
         await _cajaConfig!.put('setup_completo', true);
-        await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+        await _cajaConfig!.put('aprobado', aprobadoFinal);
         await _cajaConfig!.put('familia_id', famId);
       }
     }
@@ -217,20 +236,58 @@ class AuthProvider extends ChangeNotifier {
       'fecha_registro': FieldValue.serverTimestamp(),
     });
 
-    // 3. Añadir a la lista de padres en la familia
+    // 3. Añadir a la lista de padres pendientes en la familia
     await _db.collection('familias').doc(codigoFamilia).update({
-      'padres': FieldValue.arrayUnion([_usuarioActual!.uid]),
+      'padres_pendientes': FieldValue.arrayUnion([_usuarioActual!.uid]),
     });
 
-    // 4. Sincronizar localmente
+    // 4. Sincronizar localmente en estado NO aprobado por defecto
     final data = famDoc.data()!;
     await _cajaConfig!.put('pin_padre', data['pin_padre']);
     await _cajaConfig!.put('email_padre', data['email_padre']);
     await _cajaConfig!.put('setup_completo', true);
-    await _cajaConfig!.put('aprobado', data['aprobado'] ?? true);
+    await _cajaConfig!.put('aprobado', false);
     await _cajaConfig!.put('familia_id', codigoFamilia);
 
     notifyListeners();
+  }
+
+  Future<void> aprobarUsuario(String uidAprobar) async {
+    if (familiaId.isEmpty) return;
+    await _db.collection('familias').doc(familiaId).update({
+      'padres_pendientes': FieldValue.arrayRemove([uidAprobar]),
+      'padres': FieldValue.arrayUnion([uidAprobar]),
+    });
+  }
+
+  Future<void> rechazarUsuario(String uidRechazar) async {
+    if (familiaId.isEmpty) return;
+    await _db.collection('familias').doc(familiaId).update({
+      'padres_pendientes': FieldValue.arrayRemove([uidRechazar]),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerSolicitudesPendientes() async {
+    if (familiaId.isEmpty) return [];
+    final doc = await _db.collection('familias').doc(familiaId).get();
+    if (!doc.exists) return [];
+    final data = doc.data()!;
+    if (!data.containsKey('padres_pendientes')) return [];
+    
+    final pendientes = List<String>.from(data['padres_pendientes'] ?? []);
+    if (pendientes.isEmpty) return [];
+
+    List<Map<String, dynamic>> lista = [];
+    for (var uid in pendientes) {
+      final userDoc = await _db.collection('usuarios').doc(uid).get();
+      if (userDoc.exists) {
+        lista.add({
+          'uid': uid,
+          'email': userDoc.data()?['email'] ?? 'Usuario Desconocido',
+        });
+      }
+    }
+    return lista;
   }
 
   Future<void> recomprobarAprobacion() async {

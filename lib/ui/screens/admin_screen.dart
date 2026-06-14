@@ -21,6 +21,27 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  List<Map<String, dynamic>> _solicitudesPendientes = [];
+  bool _cargandoSolicitudes = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarSolicitudes();
+  }
+
+  Future<void> _cargarSolicitudes() async {
+    setState(() => _cargandoSolicitudes = true);
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final pendientes = await authProv.obtenerSolicitudesPendientes();
+    if (mounted) {
+      setState(() {
+        _solicitudesPendientes = pendientes;
+        _cargandoSolicitudes = false;
+      });
+    }
+  }
+
   String _formatFamiliaId(String id) {
     if (id.length <= 15) return id;
     return "${id.substring(0, 10)}...${id.substring(id.length - 4)}";
@@ -357,7 +378,60 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                // PANEL DE SOLICITUDES PENDIENTES
+                if (_cargandoSolicitudes)
+                   const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(color: Colors.amber))
+                else if (_solicitudesPendientes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.person_add_alt_1, color: Colors.orange, size: 20),
+                              SizedBox(width: 8),
+                              Text("Solicitudes para unirse a la familia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ..._solicitudesPendientes.map((solicitud) => Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(solicitud['email'], style: const TextStyle(color: Colors.white70, fontSize: 13))),
+                                IconButton(
+                                  icon: const Icon(Icons.close_rounded, color: Colors.redAccent),
+                                  onPressed: () async {
+                                    await authProv.rechazarUsuario(solicitud['uid']);
+                                    _cargarSolicitudes();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                                  onPressed: () async {
+                                    await authProv.aprobarUsuario(solicitud['uid']);
+                                    _cargarSolicitudes();
+                                  },
+                                ),
+                              ],
+                            ),
+                          )),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
 
                 // Tabs con diseño visual premium
                 Padding(
