@@ -11,7 +11,7 @@ class AuthProvider extends ChangeNotifier {
   Box? _cajaConfig;
   bool isLoading = true;
   User? _usuarioActual;
-
+0.
   User? get usuario => _usuarioActual;
   String get uid => _usuarioActual?.uid ?? '';
   bool get estaAutenticado => _usuarioActual != null;

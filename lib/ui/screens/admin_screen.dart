@@ -66,9 +66,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final authProv = Provider.of<AuthProvider>(context, listen: false);
     final famId = authProv.familiaId;
     
-    final String mensaje = 
-        "Nuestro código familiar de Mission Kids es:\n\n"
-        "$famId";
+    final String mensaje = famId;
 
     try {
       await SharePlus.instance.share(ShareParams(text: mensaje, subject: "Código Familiar Mission Kids"));
