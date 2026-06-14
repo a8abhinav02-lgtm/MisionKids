@@ -47,57 +47,57 @@ class _AdminScreenState extends State<AdminScreen> {
     return "${id.substring(0, 10)}...${id.substring(id.length - 4)}";
   }
 
-  void _compartirFamilia(BuildContext context) async {
-    final authProv = Provider.of<AuthProvider>(context, listen: false);
-    final famId = authProv.familiaId;
-    const String linkWeb = "https://misionkids.a8abhinav02.workers.dev";
-    
+  void _compartirEnlaceApp(BuildContext context) async {
+    const String linkWeb = "https://misionkids.a8abhinav02.workers.dev/";
     final String mensaje = 
         "¡Únete a nuestra familia en Mission Kids! 👥\n\n"
-        "👉 Toca este enlace para entrar directamente (el código se auto-completará):\n"
-        "$linkWeb/?code=$famId\n\n"
-        "Instrucciones:\n"
-        "1. Abre el enlace de arriba.\n"
-        "2. Crea tu cuenta o inicia sesión.\n"
-        "3. ¡Listo! Ya estarán sincronizados en tiempo real. 🚀\n\n"
-        "Si el enlace no te funciona, ingresa manualmente este código:\n"
+        "Entra al aplicativo web aquí:\n"
+        "$linkWeb";
+
+    try {
+      await SharePlus.instance.share(ShareParams(text: mensaje, subject: "Enlace Mission Kids"));
+    } catch (e) {
+      await Clipboard.setData(ClipboardData(text: mensaje));
+      if (context.mounted) _mostrarSnackBarCopiado(context);
+    }
+  }
+
+  void _compartirCodigoFamiliar(BuildContext context) async {
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final famId = authProv.familiaId;
+    
+    final String mensaje = 
+        "Nuestro código familiar de Mission Kids es:\n\n"
         "$famId";
 
     try {
-      final result = await SharePlus.instance.share(
-        ShareParams(
-          text: mensaje,
-          subject: "Código de Familia - Mission Kids",
-        ),
-      );
-      if (result.status == ShareResultStatus.dismissed) {
-        // Compartido cancelado
-      }
+      await SharePlus.instance.share(ShareParams(text: mensaje, subject: "Código Familiar Mission Kids"));
     } catch (e) {
-      // Fallback si no está soportado (navegadores locales o antiguos)
       await Clipboard.setData(ClipboardData(text: mensaje));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.copy_all_rounded, color: Colors.amber),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "¡Copiado al portapapeles! Listo para pegar y enviar a tu familiar.",
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF16213E),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
+      if (context.mounted) _mostrarSnackBarCopiado(context);
     }
+  }
+
+  void _mostrarSnackBarCopiado(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.copy_all_rounded, color: Colors.amber),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                "¡Copiado al portapapeles! Listo para pegar y enviar a tu familiar.",
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF16213E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   void _mostrarInfoFamilia(BuildContext context) {
@@ -189,22 +189,29 @@ class _AdminScreenState extends State<AdminScreen> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cerrar", style: TextStyle(color: Colors.white70)),
+          ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber,
               foregroundColor: const Color(0xFF16213E),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            icon: const Icon(Icons.share, size: 18),
-            label: const Text("Compartir", style: TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _compartirFamilia(context);
-            },
+            icon: const Icon(Icons.link, size: 18),
+            label: const Text("App"),
+            onPressed: () => _compartirEnlaceApp(context),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cerrar", style: TextStyle(color: Colors.white70)),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.vpn_key, size: 18),
+            label: const Text("Código"),
+            onPressed: () => _compartirCodigoFamiliar(context),
           ),
         ],
       ),
@@ -316,8 +323,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                   icon: const Icon(Icons.share, color: Colors.amber, size: 20),
                                   padding: const EdgeInsets.all(6),
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  onPressed: () => _compartirFamilia(context),
-                                  tooltip: "Compartir código de familia",
+                                  onPressed: () => _mostrarInfoFamilia(context),
+                                  tooltip: "Compartir familia",
                                 ),
                               ],
                             ),
