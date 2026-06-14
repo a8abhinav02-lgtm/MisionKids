@@ -186,35 +186,31 @@ class _AdminScreenState extends State<AdminScreen> {
               _buildInstructionStep("2", "Regístrate y selecciona la opción 'Unirse a Familia Existente'."),
               _buildInstructionStep("3", "Ingresa este código para sincronizar los datos en tiempo real."),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: const Color(0xFF16213E),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.link, size: 18),
-                      label: const Text("Compartir App"),
-                      onPressed: () => _compartirEnlaceApp(context),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: const Color(0xFF16213E),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
+                    icon: const Icon(Icons.link, size: 20),
+                    label: const Text("Compartir App", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    onPressed: () => _compartirEnlaceApp(context),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.vpn_key, size: 18),
-                      label: const Text("Código Solo"),
-                      onPressed: () => _compartirCodigoFamiliar(context),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
+                    icon: const Icon(Icons.vpn_key, size: 20),
+                    label: const Text("Compartir Código", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    onPressed: () => _compartirCodigoFamiliar(context),
                   ),
                 ],
               ),
