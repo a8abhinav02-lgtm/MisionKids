@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -8,6 +9,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> inicializar() async {
+    if (kIsWeb) return;
     // 1. Inicializar base de datos de zonas horarias
     tz.initializeTimeZones();
 
@@ -51,6 +53,7 @@ class NotificationService {
   }
 
   static Future<void> solicitarPermisos() async {
+    if (kIsWeb) return;
     if (Platform.isAndroid) {
       await _notificationsPlugin
           .resolvePlatformSpecificImplementation<
@@ -74,6 +77,7 @@ class NotificationService {
     required String cuerpo,
     required DateTime programacion,
   }) async {
+    if (kIsWeb) return;
     final tzDateTime = tz.TZDateTime.from(programacion, tz.local);
 
     // Evitar programar en el pasado
@@ -104,6 +108,7 @@ class NotificationService {
   }
 
   static Future<void> cancelarTodas() async {
+    if (kIsWeb) return;
     await _notificationsPlugin.cancelAll();
   }
 }
