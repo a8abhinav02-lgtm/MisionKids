@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/secure_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,6 +12,8 @@ class AuthProvider extends ChangeNotifier {
   Box? _cajaConfig;
   bool isLoading = true;
   User? _usuarioActual;
+  final SecureStorageService _secureStorage = SecureStorageService();
+  String _cachedPin = '';
 
   User? get usuario => _usuarioActual;
   String get uid => _usuarioActual?.uid ?? '';
@@ -20,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       _cajaConfig = await Hive.openBox('caja_auth_v2');
       _usuarioActual = _auth.currentUser;
+      _cachedPin = await _secureStorage.readPin() ?? '';
 
       // Si tenemos usuario, sincronizamos y validamos migración desde la nube
       if (_usuarioActual != null) {
@@ -41,7 +45,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   bool get existeAdmin => _cajaConfig?.get('setup_completo', defaultValue: false) ?? false;
-  String get pinPadre => _cajaConfig?.get('pin_padre', defaultValue: '') ?? '';
+  String get pinPadre => _cachedPin;
   String get emailPadre => _cajaConfig?.get('email_padre', defaultValue: '') ?? '';
   bool get estaAprobado => _cajaConfig?.get('aprobado', defaultValue: true) ?? true;
 
@@ -85,7 +89,8 @@ class AuthProvider extends ChangeNotifier {
       });
 
       // 4. Guardar localmente para acceso rápido offline
-      await _cajaConfig!.put('pin_padre', pin);
+      await _secureStorage.savePin(pin);
+      _cachedPin = pin;
       await _cajaConfig!.put('email_padre', email);
       await _cajaConfig!.put('setup_completo', true);
       await _cajaConfig!.put('aprobado', true);
@@ -211,7 +216,8 @@ class AuthProvider extends ChangeNotifier {
 
         bool aprobadoFinal = estaAprobadoGeneral && (!esPendiente) && enPadres;
 
-        await _cajaConfig!.put('pin_padre', data['pin_padre']);
+        await _secureStorage.savePin(data['pin_padre']);
+        _cachedPin = data['pin_padre'];
         await _cajaConfig!.put('email_padre', data['email_padre']);
         await _cajaConfig!.put('setup_completo', true);
         await _cajaConfig!.put('aprobado', aprobadoFinal);
@@ -243,7 +249,8 @@ class AuthProvider extends ChangeNotifier {
 
     // 4. Sincronizar localmente en estado NO aprobado por defecto
     final data = famDoc.data()!;
-    await _cajaConfig!.put('pin_padre', data['pin_padre']);
+    await _secureStorage.savePin(data['pin_padre']);
+    _cachedPin = data['pin_padre'];
     await _cajaConfig!.put('email_padre', data['email_padre']);
     await _cajaConfig!.put('setup_completo', true);
     await _cajaConfig!.put('aprobado', false);
@@ -301,11 +308,28 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> joinFamilyFlow({required String email, required String password, required String codigo}) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      _usuarioActual = credential.user;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+        _usuarioActual = credential.user;
+      } else {
+        rethrow;
+      }
+    }
+    await unirseAFamilia(codigo);
+  }
+
   Future<void> cerrarSesion() async {
     await _auth.signOut();
     _usuarioActual = null;
     if (_cajaConfig != null) {
-      await _cajaConfig!.clear(); // Limpiamos PIN y setup_completo local
+      await _cajaConfig!.clear(); // Limpiamos setup_completo local
+      await _secureStorage.clearAll();
+      _cachedPin = '';
     }
     notifyListeners();
   }

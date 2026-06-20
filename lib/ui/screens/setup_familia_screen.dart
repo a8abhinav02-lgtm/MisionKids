@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 import '../../providers/auth_provider.dart';
 import '../../providers/perfiles_provider.dart';
+import '../../services/error_handler.dart';
 import '../themes/app_theme.dart';
 import 'package:animate_do/animate_do.dart';
 import 'seleccion_perfil_screen.dart';
@@ -186,14 +187,17 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                 try {
                   final authProv = Provider.of<AuthProvider>(context, listen: false);
                   await authProv.loginPadre(_emailCtrl.text.trim(), _passCtrl.text);
-                  if (mounted) {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
-                  }
-                } catch (e) {
+                  if (!context.mounted) return;
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                } on FirebaseAuthException catch (e) {
+                  if (!context.mounted) return;
                   setState(() => _isCargando = false);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al entrar: ${e.toString()}"), backgroundColor: Colors.red));
-                  }
+                  final errorMsg = ErrorHandler.getMessage(e.code);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  setState(() => _isCargando = false);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al entrar: ${e.toString()}"), backgroundColor: Colors.red));
                 }
               },
               child: const Text("SINCRONIZAR Y ENTRAR ☁️", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -415,14 +419,17 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                         colorPrimario: _colorSeleccionado
                       );
 
-                      if (mounted) {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
-                      }
-                    } catch (e) {
+                      if (!context.mounted) return;
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                    } on FirebaseAuthException catch (e) {
+                      if (!context.mounted) return;
                       setState(() => _isCargando = false);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
-                      }
+                      final errorMsg = ErrorHandler.getMessage(e.code);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      setState(() => _isCargando = false);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
                     }
                   },
                   child: const Text("CREAR CUENTA 🚀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -481,35 +488,23 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                     setState(() => _isCargando = true);
                     try {
                       final authProv = Provider.of<AuthProvider>(context, listen: false);
+                      await authProv.joinFamilyFlow(
+                        email: _emailCtrl.text.trim(),
+                        password: _passCtrl.text,
+                        codigo: codigo,
+                      );
 
-                      // 1. Intentar iniciar sesión primero, si falla por no existir, crear
-                      try {
-                        await FirebaseAuth.instance.signInWithEmailAndPassword(
-                          email: _emailCtrl.text.trim(),
-                          password: _passCtrl.text,
-                        );
-                      } on FirebaseAuthException catch (e) {
-                        if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-                          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                            email: _emailCtrl.text.trim(),
-                            password: _passCtrl.text,
-                          );
-                        } else {
-                          rethrow;
-                        }
-                      }
-                      
-                      // 2. Unir el usuario recién creado a la familia existente
-                      await authProv.unirseAFamilia(codigo);
-
-                      if (mounted) {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
-                      }
-                    } catch (e) {
+                      if (!context.mounted) return;
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
+                    } on FirebaseAuthException catch (e) {
+                      if (!context.mounted) return;
                       setState(() => _isCargando = false);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
-                      }
+                      final errorMsg = ErrorHandler.getMessage(e.code);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      setState(() => _isCargando = false);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error inesperado: ${e.toString()}"), backgroundColor: Colors.red));
                     }
                   },
                   child: const Text("UNIRSE A FAMILIA 👥", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

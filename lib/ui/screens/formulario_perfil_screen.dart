@@ -95,12 +95,11 @@ class _FormularioPerfilScreenState extends State<FormularioPerfilScreen> {
                       colorPrimario: _colorSeleccionado
                     );
                     
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Hijo agregado correctamente."))
-                      );
-                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Hijo agregado correctamente."))
+                    );
                   },
                   child: const Text("GUARDAR PERFIL"),
                 )
