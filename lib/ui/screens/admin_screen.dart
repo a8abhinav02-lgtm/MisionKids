@@ -49,7 +49,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   void _compartirEnlaceApp(BuildContext context) async {
     const String linkWeb = "https://misionkids.a8abhinav02.workers.dev/";
-    const String linkAndroid = "https://github.com/a8abhinav02-lgtm/MisionKids/releases/download/v1.0/missionkids_v1.0.apk";
+    const String linkAndroid = "https://github.com/a8abhinav02-lgtm/MisionKids/releases";
     final String mensaje = 
         "¡Únete a nuestra familia en Mission Kids! 👥\n\n"
         "🌐 Entra al aplicativo web aquí:\n"
