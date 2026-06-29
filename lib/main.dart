@@ -63,6 +63,17 @@ class MiAppTareas extends StatelessWidget {
             useMaterial3: true,
             fontFamily: 'Roboto',
           ),
+          builder: (context, child) {
+            final mediaQueryData = MediaQuery.of(context);
+            final restrictedTextScaler = mediaQueryData.textScaler.clamp(
+              minScaleFactor: 1.0,
+              maxScaleFactor: 1.25,
+            );
+            return MediaQuery(
+              data: mediaQueryData.copyWith(textScaler: restrictedTextScaler),
+              child: child!,
+            );
+          },
           home: const SeleccionPerfilScreen(),
         ),
       ),
