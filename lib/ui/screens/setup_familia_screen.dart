@@ -187,15 +187,15 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                 try {
                   final authProv = Provider.of<AuthProvider>(context, listen: false);
                   await authProv.loginPadre(_emailCtrl.text.trim(), _passCtrl.text);
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
                 } on FirebaseAuthException catch (e) {
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   setState(() => _isCargando = false);
                   final errorMsg = ErrorHandler.getMessage(e.code);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
                 } catch (e) {
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   setState(() => _isCargando = false);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al entrar: ${e.toString()}"), backgroundColor: Colors.red));
                 }
@@ -419,15 +419,15 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                         colorPrimario: _colorSeleccionado
                       );
 
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
                     } on FirebaseAuthException catch (e) {
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       setState(() => _isCargando = false);
                       final errorMsg = ErrorHandler.getMessage(e.code);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
                     } catch (e) {
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       setState(() => _isCargando = false);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red));
                     }
@@ -494,15 +494,15 @@ class _SetupFamiliaScreenState extends State<SetupFamiliaScreen> {
                         codigo: codigo,
                       );
 
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SeleccionPerfilScreen()));
                     } on FirebaseAuthException catch (e) {
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       setState(() => _isCargando = false);
                       final errorMsg = ErrorHandler.getMessage(e.code);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
                     } catch (e) {
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       setState(() => _isCargando = false);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error inesperado: ${e.toString()}"), backgroundColor: Colors.red));
                     }

@@ -324,9 +324,13 @@ class _AdminScreenState extends State<AdminScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text(
-                                  "Panel de Padres",
-                                  style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                                Flexible(
+                                  child: Text(
+                                    "Panel de Padres",
+                                    style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.share, color: Colors.amber, size: 20),
@@ -703,10 +707,14 @@ class _TabAdminPerfil extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 28),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () => tareaProv.rechazarTarea(tarea),
                           ),
                           IconButton(
                             icon: const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () async {
                               final success = await tareaProv.aprobarTarea(tarea);
                               if (success) {
@@ -762,10 +770,14 @@ class _TabAdminPerfil extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: Icon(Icons.close_rounded, color: Colors.red.shade300, size: 28),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () => perfilesProv.rechazarCanje(perfil.id, solicitud['idSolicitud']),
                           ),
                           IconButton(
                             icon: const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () => perfilesProv.aprobarCanje(perfil.id, solicitud),
                           ),
                         ],
@@ -871,6 +883,8 @@ class _TabAdminPerfil extends StatelessWidget {
                             ),
                             title: Text(
                               tarea.nombre, 
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontWeight: FontWeight.w600, 
                                 fontSize: 16,
@@ -894,6 +908,8 @@ class _TabAdminPerfil extends StatelessWidget {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22), 
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                       onPressed: () async {
                                         final success = await tareaProv.aprobarTareaManual(tarea);
                                         if (success) {
@@ -908,8 +924,18 @@ class _TabAdminPerfil extends StatelessWidget {
                                         }
                                       }
                                     ),
-                                    IconButton(icon: Icon(Icons.edit_rounded, color: color, size: 22), onPressed: () => _mostrarDialogoTarea(context, tarea)),
-                                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), onPressed: () => tareaProv.eliminarTarea(tarea)),
+                                    IconButton(
+                                      icon: Icon(Icons.edit_rounded, color: color, size: 22), 
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      onPressed: () => _mostrarDialogoTarea(context, tarea)
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), 
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      onPressed: () => tareaProv.eliminarTarea(tarea)
+                                    ),
                                   ],
                                 ),
                           ),
@@ -1272,10 +1298,14 @@ class _BottomSheetTiendaAdminState extends State<_BottomSheetTiendaAdmin> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                               onPressed: () => _prepararEdicion(p),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                               onPressed: () => _confirmarEliminacion(p),
                             ),
                           ],
