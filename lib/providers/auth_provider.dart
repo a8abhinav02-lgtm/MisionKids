@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/secure_storage_service.dart';
+import '../config/app_config.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,6 +16,9 @@ class AuthProvider extends ChangeNotifier {
   final SecureStorageService _secureStorage = SecureStorageService();
   String _cachedPin = '';
 
+  bool tieneActualizacion = false;
+  String urlDescargaActualizacion = '';
+
   User? get usuario => _usuarioActual;
   String get uid => _usuarioActual?.uid ?? '';
   bool get estaAutenticado => _usuarioActual != null;
@@ -24,6 +28,13 @@ class AuthProvider extends ChangeNotifier {
       _cajaConfig = await Hive.openBox('caja_auth_v2');
       _usuarioActual = _auth.currentUser;
       _cachedPin = await _secureStorage.readPin() ?? '';
+
+      // Verificar actualizaciones globales al iniciar
+      try {
+        await verificarActualizaciones();
+      } catch (e) {
+        debugPrint('[AuthProvider] Error al verificar actualizaciones: $e');
+      }
 
       // Si tenemos usuario, sincronizamos y validamos migración desde la nube
       if (_usuarioActual != null) {
@@ -332,5 +343,47 @@ class AuthProvider extends ChangeNotifier {
       _cachedPin = '';
     }
     notifyListeners();
+  }
+
+  Future<void> verificarActualizaciones() async {
+    try {
+      final doc = await _db.collection('config').doc('app').get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final versionAndroid = data['version_android']?.toString() ?? '';
+        final urlAndroid = data['url_android']?.toString() ?? '';
+        
+        if (versionAndroid.isNotEmpty && _debeActualizar(kAppVersion, versionAndroid)) {
+          tieneActualizacion = true;
+          urlDescargaActualizacion = urlAndroid;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] Error en verificarActualizaciones: $e');
+    }
+  }
+
+  bool _debeActualizar(String versionLocal, String versionRemota) {
+    try {
+      final localParts = versionLocal.split('.').map(int.parse).toList();
+      final remotaParts = versionRemota.split('.').map(int.parse).toList();
+      
+      // Asegurar que ambas tengan 3 partes
+      while (localParts.length < 3) {
+        localParts.add(0);
+      }
+      while (remotaParts.length < 3) {
+        remotaParts.add(0);
+      }
+      
+      for (int i = 0; i < 3; i++) {
+        if (remotaParts[i] > localParts[i]) return true;
+        if (remotaParts[i] < localParts[i]) return false;
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] Error al parsear versión: $e');
+    }
+    return false;
   }
 }

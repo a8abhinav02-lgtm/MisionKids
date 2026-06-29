@@ -65,5 +65,11 @@ service cloud.firestore {
       }
     }
 
+    // ======================================================
+    // CONFIGURACIÓN DE LA APP — Lectura pública de versión
+    // ======================================================
+    match /config/app {
+      allow read: if true;
+    }
   }
 }
