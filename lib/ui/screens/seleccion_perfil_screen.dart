@@ -168,7 +168,7 @@ class SeleccionPerfilScreen extends StatelessWidget {
 
                         // Botón Padres
                         FadeInUp(
-                          delay: Duration(milliseconds: 200 + (perfiles.length * 150)),
+                          delay: Duration(milliseconds: 200 + perfiles.length * 150),
                           child: _BotonAvatar(
                             nombre: "Padres",
                             iconData: Icons.admin_panel_settings,

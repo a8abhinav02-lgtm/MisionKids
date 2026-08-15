@@ -90,6 +90,7 @@ class Tarea extends HiveObject {
     );
   }
 
+  // ignore: non_const_argument_for_const_parameter
   IconData get icono => IconData(iconoCodePoint, fontFamily: 'MaterialIcons');
 
   // Helpers para saber el estado fácil
