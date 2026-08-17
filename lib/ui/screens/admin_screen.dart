@@ -12,6 +12,7 @@ import '../../models/tarea_model.dart';
 import '../widgets/formulario_tarea.dart';
 import '../themes/app_theme.dart';
 import 'formulario_perfil_screen.dart';
+import '../widgets/feedback_fab.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -519,6 +520,7 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ),
         ),
+        floatingActionButton: const FeedbackFab(),
       ),
     );
   }

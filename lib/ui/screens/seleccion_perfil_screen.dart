@@ -10,6 +10,7 @@ import 'setup_familia_screen.dart';
 import 'esperando_aprobacion_screen.dart';
 import 'home_nino_screen.dart';
 import 'admin_screen.dart';
+import '../widgets/feedback_fab.dart';
 
 class SeleccionPerfilScreen extends StatelessWidget {
   const SeleccionPerfilScreen({super.key});
@@ -186,6 +187,7 @@ class SeleccionPerfilScreen extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: const FeedbackFab(),
     );
   }
 
