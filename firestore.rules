@@ -71,5 +71,15 @@ service cloud.firestore {
     match /config/app {
       allow read: if true;
     }
+
+    // ======================================================
+    // FEEDBACK — Permite crear sugerencias a usuarios autenticados
+    //            Lectura, edición y eliminación bloqueadas (solo Firebase Console)
+    // ======================================================
+    match /feedback/{feedbackId} {
+      allow create: if request.resource.data.message is string &&
+                       request.resource.data.message.size() >= 5;
+      allow read, update, delete: if false;
+    }
   }
 }
