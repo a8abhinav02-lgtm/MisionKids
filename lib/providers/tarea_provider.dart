@@ -4,8 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tarea_model.dart';
 
 class TareaProvider extends ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore? _customDb;
   Box<Tarea>? _cajaTareas;
+
+  TareaProvider({FirebaseFirestore? firestore}) : _customDb = firestore;
+
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
   
   bool isLoading = true;
   String _uid = '';
@@ -163,6 +167,38 @@ class TareaProvider extends ChangeNotifier {
 
   List<Tarea> todasTareasPorRevisarGoblal() {
     return _todasLasTareasData.where((t) => t.estado == 'revision').toList();
+  }
+
+  List<Tarea> tareasProgramadasHoy(String perfilId) {
+    return _filtrarTareasPorFecha(_tareasDelPerfil(perfilId), DateTime.now())
+        .where((t) => t.bloque != 'sancion')
+        .toList();
+  }
+
+  double porcentajeCumplimientoHoy(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    if (programadas.isEmpty) return 0.0;
+    final completadas = programadas.where((t) => t.estado == 'aprobada' && t.ultimoDiaCompletado == fechaIdHoy).length;
+    return completadas / programadas.length;
+  }
+
+  Map<String, int> conteoPorBloque(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    return {
+      'manana': programadas.where((t) => t.bloque == 'manana').length,
+      'tarde': programadas.where((t) => t.bloque == 'tarde').length,
+      'noche': programadas.where((t) => t.bloque == 'noche').length,
+    };
+  }
+
+  Map<String, int> conteoCompletadasPorBloque(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    final completadas = programadas.where((t) => t.estado == 'aprobada' && t.ultimoDiaCompletado == fechaIdHoy);
+    return {
+      'manana': completadas.where((t) => t.bloque == 'manana').length,
+      'tarde': completadas.where((t) => t.bloque == 'tarde').length,
+      'noche': completadas.where((t) => t.bloque == 'noche').length,
+    };
   }
 
   Future<void> agregarTarea({
