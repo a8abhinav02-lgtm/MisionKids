@@ -27,6 +27,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
   final FeedbackService _feedbackService = FeedbackService();
 
   String _selectedCategory = 'Sugerencia';
+  int _rating = 5;
   bool _isSubmitting = false;
   String? _errorMessage;
 
@@ -42,8 +43,8 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
       'color': Colors.red.shade600,
     },
     {
-      'label': 'Felicitación',
-      'icon': Icons.star_border_rounded,
+      'label': 'Califícanos',
+      'icon': Icons.star_rounded,
       'color': Colors.orange.shade700,
     },
     {
@@ -53,6 +54,31 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
     },
   ];
 
+  static const Map<int, String> _ratingLabels = {
+    1: 'Muy insatisfecho 😞',
+    2: 'Poco satisfecho 😐',
+    3: 'Aceptable 🙂',
+    4: '¡Muy bueno! 😊',
+    5: '¡Excelente experiencia! 🌟',
+  };
+
+  String get _hintText {
+    if (_selectedCategory == 'Califícanos') {
+      switch (_rating) {
+        case 1:
+        case 2:
+          return '¿Qué podemos mejorar para que tu experiencia sea de 5 estrellas? (Opcional)';
+        case 3:
+          return '¿Qué te gustaría ver en las próximas versiones de Misión Kids? (Opcional)';
+        case 4:
+        case 5:
+        default:
+          return '¡Nos alegra mucho! Cuéntanos qué es lo que más te gusta de la app... (Opcional)';
+      }
+    }
+    return 'Cuéntanos qué podemos mejorar, qué te gusta o si encontraste algún problema...';
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -61,14 +87,18 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
 
   Future<void> _enviarFeedback() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) {
-      setState(() => _errorMessage = 'Por favor escribe tu comentario.');
-      return;
-    }
+    final bool esCalificacion = _selectedCategory == 'Califícanos';
 
-    if (text.length < 5) {
-      setState(() => _errorMessage = 'El mensaje es demasiado corto (mín. 5 caracteres).');
-      return;
+    if (!esCalificacion) {
+      if (text.isEmpty) {
+        setState(() => _errorMessage = 'Por favor escribe tu comentario.');
+        return;
+      }
+
+      if (text.length < 5) {
+        setState(() => _errorMessage = 'El mensaje es demasiado corto (mín. 5 caracteres).');
+        return;
+      }
     }
 
     setState(() {
@@ -81,9 +111,14 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
       final perfilesProv = Provider.of<PerfilesProvider>(context, listen: false);
       final perfil = perfilesProv.perfilActivo;
 
+      final mensajeFinal = text.isNotEmpty
+          ? text
+          : (esCalificacion ? 'Calificación: $_rating estrellas' : '');
+
       await _feedbackService.submitFeedback(
-        message: text,
+        message: mensajeFinal,
         category: _selectedCategory,
+        rating: esCalificacion ? _rating : null,
         userEmail: authProv.usuario?.email,
         perfilNombre: perfil?.nombre,
         familiaId: authProv.familiaId,
@@ -127,6 +162,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
+    final bool esCalificacion = _selectedCategory == 'Califícanos';
 
     return Padding(
       padding: EdgeInsets.only(
@@ -174,8 +210,8 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
-                      Icons.rate_review_rounded,
-                      color: primaryColor,
+                      esCalificacion ? Icons.star_rounded : Icons.rate_review_rounded,
+                      color: esCalificacion ? Colors.amber.shade700 : primaryColor,
                       size: 24,
                     ),
                   ),
@@ -185,13 +221,15 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '¿Tienes sugerencias o dudas?',
+                          esCalificacion ? '¿Cómo calificarías Misión Kids?' : '¿Tienes sugerencias o dudas?',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          'Tu retroalimentación construye Misión Kids',
+                          esCalificacion
+                              ? 'Toca las estrellas para calificar tu experiencia'
+                              : 'Tu retroalimentación construye Misión Kids',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
@@ -206,7 +244,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               // Categorías
               Text(
@@ -255,26 +293,89 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                         onSelected: _isSubmitting
                             ? null
                             : (val) {
-                                if (val) setState(() => _selectedCategory = cat['label']);
+                                if (val) {
+                                  setState(() {
+                                    _selectedCategory = cat['label'];
+                                    _errorMessage = null;
+                                  });
+                                }
                               },
                       ),
                     );
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
+
+              // Selector interactivo de estrellas cuando la categoría es Califícanos
+              if (esCalificacion) ...[
+                FadeIn(
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.amber.withValues(alpha: 0.08)
+                          : Colors.amber.shade50.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(5, (index) {
+                            final starNumber = index + 1;
+                            final isFilled = starNumber <= _rating;
+
+                            return IconButton(
+                              iconSize: 38,
+                              splashRadius: 26,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => setState(() => _rating = starNumber),
+                              icon: Icon(
+                                isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                                color: isFilled ? Colors.amber.shade600 : Colors.grey.shade400,
+                              ),
+                              tooltip: '$starNumber estrellas',
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 4),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Text(
+                            _ratingLabels[_rating] ?? '',
+                            key: ValueKey<int>(_rating),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.amber.shade300 : Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Campo de texto
               TextField(
                 controller: _controller,
                 enabled: !_isSubmitting,
-                maxLines: 4,
+                maxLines: esCalificacion ? 3 : 4,
                 maxLength: 500,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
-                  hintText: 'Cuéntanos qué podemos mejorar, qué te gusta o si encontraste algún problema...',
+                  hintText: _hintText,
                   hintStyle: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13.5,
                     color: isDark ? Colors.grey[500] : Colors.grey[400],
                   ),
                   filled: true,
@@ -293,7 +394,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
+                    borderSide: BorderSide(
+                      color: esCalificacion ? Colors.amber.shade700 : primaryColor,
+                      width: 2,
+                    ),
                   ),
                   errorText: _errorMessage,
                 ),
@@ -315,13 +419,18 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.send_rounded, size: 20),
+                      : Icon(
+                          esCalificacion ? Icons.send_rounded : Icons.send_rounded,
+                          size: 20,
+                        ),
                   label: Text(
-                    _isSubmitting ? 'Enviando comentarios...' : 'Enviar comentarios',
+                    _isSubmitting
+                        ? 'Enviando...'
+                        : (esCalificacion ? 'Enviar calificación' : 'Enviar comentarios'),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
+                    backgroundColor: esCalificacion ? Colors.amber.shade700 : primaryColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

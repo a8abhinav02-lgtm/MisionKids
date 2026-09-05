@@ -30,6 +30,7 @@ class FeedbackService {
   Future<void> submitFeedback({
     required String message,
     String category = 'Sugerencia',
+    int? rating,
     String? userEmail,
     String? perfilNombre,
     String? perfilRol,
@@ -37,9 +38,10 @@ class FeedbackService {
   }) async {
     final user = _auth.currentUser;
 
-    final feedbackData = {
+    final feedbackData = <String, dynamic>{
       'message': message.trim(),
       'category': category,
+      if (rating != null) 'rating': rating,
       'platform': _currentPlatform,
       'appVersion': '1.0.0+1',
       'timestamp': FieldValue.serverTimestamp(),

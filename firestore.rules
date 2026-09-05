@@ -73,12 +73,17 @@ service cloud.firestore {
     }
 
     // ======================================================
-    // FEEDBACK — Permite crear sugerencias a usuarios autenticados
+    // FEEDBACK — Permite crear sugerencias y calificaciones a los usuarios
     //            Lectura, edición y eliminación bloqueadas (solo Firebase Console)
     // ======================================================
     match /feedback/{feedbackId} {
-      allow create: if request.resource.data.message is string &&
-                       request.resource.data.message.size() >= 5;
+      allow create: if request.resource.data.message is string && (
+                       request.resource.data.message.size() >= 5 ||
+                       ('rating' in request.resource.data &&
+                        request.resource.data.rating is int &&
+                        request.resource.data.rating >= 1 &&
+                        request.resource.data.rating <= 5)
+                     );
       allow read, update, delete: if false;
     }
   }
