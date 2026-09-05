@@ -4,8 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/perfil_model.dart';
 
 class PerfilesProvider extends ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore? _customDb;
   Box<Perfil>? _cajaPerfiles;
+
+  PerfilesProvider({FirebaseFirestore? firestore}) : _customDb = firestore;
+
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
   
   bool isLoading = true;
   String _uid = '';
@@ -204,6 +208,81 @@ class PerfilesProvider extends ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  // --- Gamificación y Rachas Diarias ---
+
+  Future<bool> registrarProgresoRacha(String perfilId, int fechaIdHoy) async {
+    final perfil = todosLosPerfiles.where((p) => p.id == perfilId).firstOrNull;
+    if (perfil == null) return false;
+
+    // Si ya se registró la racha hoy, evitar duplicados
+    if (perfil.ultimoDiaRacha == fechaIdHoy) {
+      return false;
+    }
+
+    final fechaIdAyer = _calcularFechaIdAyer(fechaIdHoy);
+
+    if (perfil.ultimoDiaRacha == fechaIdAyer) {
+      // Día consecutivo: racha sigue viva
+      perfil.rachaActual += 1;
+    } else {
+      // Racha rota o primera vez que inicia
+      perfil.rachaActual = 1;
+    }
+
+    if (perfil.rachaActual > perfil.mejorRacha) {
+      perfil.mejorRacha = perfil.rachaActual;
+    }
+
+    perfil.ultimoDiaRacha = fechaIdHoy;
+
+    // Asignación de medallas de hitos
+    final medallasActuales = List<String>.from(perfil.medallas);
+    bool ganoNuevaMedalla = false;
+
+    if (perfil.rachaActual >= 3 && !medallasActuales.contains('bronce_3')) {
+      medallasActuales.add('bronce_3');
+      ganoNuevaMedalla = true;
+    }
+    if (perfil.rachaActual >= 7 && !medallasActuales.contains('plata_7')) {
+      medallasActuales.add('plata_7');
+      ganoNuevaMedalla = true;
+    }
+    if (perfil.rachaActual >= 14 && !medallasActuales.contains('oro_14')) {
+      medallasActuales.add('oro_14');
+      ganoNuevaMedalla = true;
+    }
+    if (perfil.rachaActual >= 30 && !medallasActuales.contains('diamante_30')) {
+      medallasActuales.add('diamante_30');
+      ganoNuevaMedalla = true;
+    }
+
+    if (ganoNuevaMedalla) {
+      perfil.medallas = medallasActuales;
+    }
+
+    if (_uid.isNotEmpty) {
+      await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
+        'rachaActual': perfil.rachaActual,
+        'mejorRacha': perfil.mejorRacha,
+        'ultimoDiaRacha': perfil.ultimoDiaRacha,
+        'medallas': perfil.medallas,
+      });
+    } else {
+      await perfil.save();
+    }
+
+    notifyListeners();
+    return true;
+  }
+
+  int _calcularFechaIdAyer(int fechaIdHoy) {
+    final anio = fechaIdHoy ~/ 10000;
+    final mes = (fechaIdHoy % 10000) ~/ 100;
+    final dia = fechaIdHoy % 100;
+    final fecha = DateTime(anio, mes, dia).subtract(const Duration(days: 1));
+    return (fecha.year * 10000) + (fecha.month * 100) + fecha.day;
   }
 
   // --- Tienda de Premios ---

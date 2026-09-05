@@ -756,6 +756,7 @@ class _TabAdminPerfil extends StatelessWidget {
                               final success = await tareaProv.aprobarTarea(tarea);
                               if (success) {
                                 perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                                await perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy);
                               }
                             },
                           ),
