@@ -10,6 +10,8 @@ import '../../models/perfil_model.dart';
 import '../themes/app_theme.dart';
 import '../../services/notification_service.dart';
 import 'historial_screen.dart';
+import '../../services/onboarding_service.dart';
+import '../widgets/onboarding/onboarding_modal.dart';
 
 class HomeNinoScreen extends StatefulWidget {
   const HomeNinoScreen({super.key});
@@ -20,6 +22,7 @@ class HomeNinoScreen extends StatefulWidget {
 
 class _HomeNinoScreenState extends State<HomeNinoScreen> {
   late ConfettiController _confettiController;
+  final OnboardingService _onboardingService = OnboardingService();
 
   @override
   void initState() {
@@ -27,6 +30,31 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     // Solicitar permisos de notificación nativos al entrar al perfil del niño
     NotificationService.solicitarPermisos();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final perfilesProv = Provider.of<PerfilesProvider>(context, listen: false);
+      final perfilActual = perfilesProv.perfilActivo;
+      if (perfilActual != null) {
+        _verificarOnboardingNino(perfilActual);
+      }
+    });
+  }
+
+  Future<void> _verificarOnboardingNino(Perfil perfil) async {
+    final haVisto = await _onboardingService.haVistoOnboardingNino(perfil.id);
+    if (!haVisto && mounted) {
+      _mostrarOnboardingNino(perfil);
+    }
+  }
+
+  void _mostrarOnboardingNino(Perfil perfil) {
+    OnboardingModal.mostrar(
+      context: context,
+      slides: OnboardingModal.crearSlidesNino(perfil),
+      textoBotonFinal: '¡A cumplir misiones!',
+      onCompletado: () {
+        _onboardingService.marcarOnboardingNinoCompletado(perfil.id);
+      },
+    );
   }
 
   @override
@@ -115,20 +143,41 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                                 ],
                               ),
                               const Spacer(),
-                              Semantics(
-                                label: "Ver mis logros y salón de la fama",
-                                button: true,
-                                child: GestureDetector(
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistorialScreen())),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(alpha: 0.25),
-                                      borderRadius: BorderRadius.circular(12),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Semantics(
+                                    label: "¿Cómo jugar y ganar estrellas?",
+                                    button: true,
+                                    child: GestureDetector(
+                                      onTap: () => _mostrarOnboardingNino(perfilActual),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+                                      ),
                                     ),
-                                    child: const Icon(Icons.emoji_events, color: Colors.amber, size: 26),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Semantics(
+                                    label: "Ver mis logros y salón de la fama",
+                                    button: true,
+                                    child: GestureDetector(
+                                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistorialScreen())),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withValues(alpha: 0.25),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.emoji_events, color: Colors.amber, size: 26),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

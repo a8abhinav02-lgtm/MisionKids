@@ -13,6 +13,9 @@ import '../widgets/formulario_tarea.dart';
 import '../themes/app_theme.dart';
 import 'formulario_perfil_screen.dart';
 import '../widgets/feedback_fab.dart';
+import '../../services/onboarding_service.dart';
+import '../widgets/onboarding/onboarding_modal.dart';
+import '../widgets/empty_state_card.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -22,6 +25,7 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
+  final OnboardingService _onboardingService = OnboardingService();
   List<Map<String, dynamic>> _solicitudesPendientes = [];
   bool _cargandoSolicitudes = false;
 
@@ -29,6 +33,27 @@ class _AdminScreenState extends State<AdminScreen> {
   void initState() {
     super.initState();
     _cargarSolicitudes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarOnboardingAdmin();
+    });
+  }
+
+  Future<void> _verificarOnboardingAdmin() async {
+    final haVisto = await _onboardingService.haVistoOnboardingAdmin();
+    if (!haVisto && mounted) {
+      _mostrarOnboardingAdmin();
+    }
+  }
+
+  void _mostrarOnboardingAdmin() {
+    OnboardingModal.mostrar(
+      context: context,
+      slides: OnboardingModal.crearSlidesAdmin(),
+      textoBotonFinal: '¡Entendido!',
+      onCompletado: () {
+        _onboardingService.marcarOnboardingAdminCompletado();
+      },
+    );
   }
 
   Future<void> _cargarSolicitudes() async {
@@ -342,6 +367,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   onPressed: () => _mostrarInfoFamilia(context),
                                   tooltip: "Compartir familia",
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.help_outline_rounded, color: Colors.amber, size: 20),
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  onPressed: _mostrarOnboardingAdmin,
+                                  tooltip: "Guía de administración",
                                 ),
                               ],
                             ),
@@ -817,17 +849,13 @@ class _TabAdminPerfil extends StatelessWidget {
         ),
 
         if (todasLasTareas.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(32),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.inbox_rounded, size: 60, color: Colors.grey.shade300),
-                  const SizedBox(height: 12),
-                  Text("Sin misiones creadas aún", style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
-                ],
-              ),
-            ),
+          EmptyStateCard(
+            icon: Icons.checklist_rtl_rounded,
+            title: "¡Organiza las misiones de ${perfil.nombre}!",
+            description: "Aún no has creado tareas para este perfil. Define hábitos diarios divididos por bloques horarios con puntos y recompensas.",
+            actionText: "Crear Primera Misión",
+            accentColor: color,
+            onAction: () => _mostrarDialogoTarea(context, null),
           ),
 
         // MISIONES EXISTENTES AGRUPADAS
