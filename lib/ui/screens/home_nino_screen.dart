@@ -455,7 +455,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                     }
 
                     _confettiController.play();
-                    tareaProv.solicitarRevision(tarea);
+                    tareaProv.solicitarRevision(tarea, nombrePerfil: perfilesProv.perfilActivo?.nombre);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

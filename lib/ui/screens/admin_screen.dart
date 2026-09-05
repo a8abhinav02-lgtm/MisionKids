@@ -777,7 +777,7 @@ class _TabAdminPerfil extends StatelessWidget {
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () async {
-                              final success = await tareaProv.aprobarTarea(tarea);
+                              final success = await tareaProv.aprobarTarea(tarea, nombrePerfil: perfil.nombre);
                               if (success) {
                                 perfilesProv.agregarDinero(perfil.id, tarea.puntos);
                                 await perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy);
@@ -986,11 +986,12 @@ class _TabAdminPerfil extends StatelessWidget {
                                       padding: const EdgeInsets.all(4),
                                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                       onPressed: () async {
-                                        final success = await tareaProv.aprobarTareaManual(tarea);
+                                        final success = await tareaProv.aprobarTareaManual(tarea, nombrePerfil: perfil.nombre);
                                         if (success) {
                                           perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                                          await perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados.")));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados y racha actualizada.")));
                                           }
                                         } else {
                                           if (context.mounted) {
