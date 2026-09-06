@@ -18,6 +18,7 @@ import '../widgets/onboarding/onboarding_modal.dart';
 import '../widgets/empty_state_card.dart';
 import '../widgets/plantillas_tareas_modal.dart';
 import '../widgets/analiticas_habitos_modal.dart';
+import '../widgets/politica_privacidad_modal.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -376,6 +377,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   onPressed: _mostrarOnboardingAdmin,
                                   tooltip: "Guía de administración",
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.shield_outlined, color: Colors.amber, size: 20),
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  onPressed: () => PoliticaPrivacidadModal.mostrar(context),
+                                  tooltip: "Política de Privacidad y Menores",
                                 ),
                               ],
                             ),

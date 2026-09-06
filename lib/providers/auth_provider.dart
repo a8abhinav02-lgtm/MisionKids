@@ -7,8 +7,15 @@ import '../services/secure_storage_service.dart';
 import '../config/app_config.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth? _customAuth;
+  final FirebaseFirestore? _customDb;
+
+  AuthProvider({FirebaseAuth? auth, FirebaseFirestore? firestore})
+      : _customAuth = auth,
+        _customDb = firestore;
+
+  FirebaseAuth get _auth => _customAuth ?? FirebaseAuth.instance;
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
 
   Box? _cajaConfig;
   bool isLoading = true;
@@ -26,7 +33,11 @@ class AuthProvider extends ChangeNotifier {
   Future<void> inicializar() async {
     try {
       _cajaConfig = await Hive.openBox('caja_auth_v2');
-      _usuarioActual = _auth.currentUser;
+      try {
+        _usuarioActual = _auth.currentUser;
+      } catch (_) {
+        _usuarioActual = null;
+      }
       _cachedPin = await _secureStorage.readPin() ?? '';
 
       // Verificar actualizaciones globales al iniciar
@@ -121,6 +132,58 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<bool> restablecerPinConContrasena({
+    required String password,
+    required String nuevoPin,
+  }) async {
+    final email = emailPadre.isNotEmpty ? emailPadre : (_usuarioActual?.email ?? '');
+    if (email.isEmpty) {
+      // Modo local/offline sin correo registrado
+      await _secureStorage.savePin(nuevoPin);
+      _cachedPin = nuevoPin;
+      notifyListeners();
+      return true;
+    }
+
+    try {
+      final cred = EmailAuthProvider.credential(email: email, password: password);
+      if (_usuarioActual != null) {
+        await _usuarioActual!.reauthenticateWithCredential(cred);
+      } else {
+        final authResult = await _auth.signInWithEmailAndPassword(email: email, password: password);
+        _usuarioActual = authResult.user;
+      }
+
+      await _secureStorage.savePin(nuevoPin);
+      _cachedPin = nuevoPin;
+
+      final famId = familiaId;
+      if (famId.isNotEmpty) {
+        await _db.collection('familias').doc(famId).update({
+          'pin_padre': nuevoPin,
+        });
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('[AuthProvider] Error al restablecer PIN con contraseña: $e');
+      return false;
+    }
+  }
+
+  Future<bool> enviarCorreoRestablecimientoPassword() async {
+    final email = emailPadre.isNotEmpty ? emailPadre : (_usuarioActual?.email ?? '');
+    if (email.isEmpty) return false;
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } catch (e) {
+      debugPrint('[AuthProvider] Error al enviar correo de restablecimiento: $e');
+      return false;
     }
   }
 
@@ -360,7 +423,9 @@ class AuthProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('[AuthProvider] Error en verificarActualizaciones: $e');
+      if (!e.toString().contains('no-app')) {
+        debugPrint('[AuthProvider] Error en verificarActualizaciones: $e');
+      }
     }
   }
 
