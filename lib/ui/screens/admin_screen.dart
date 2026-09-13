@@ -863,13 +863,62 @@ class _TabAdminPerfil extends StatelessWidget {
         // MISIONES EXISTENTES
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Misiones de ${perfil.nombre}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700)),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 380;
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Misiones de ${perfil.nombre}",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: Icon(Icons.bolt_rounded, size: 18, color: Colors.amber.shade800),
+                            label: const Text("Plantillas"),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.amber.shade900,
+                              side: BorderSide(color: Colors.amber.shade400),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            onPressed: () => _mostrarCatalogoPlantillas(context),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.add, size: 20),
+                            label: const Text("Nueva"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () => _mostrarDialogoTarea(context, null),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
                 children: [
+                  Expanded(
+                    child: Text(
+                      "Misiones de ${perfil.nombre}",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   OutlinedButton.icon(
                     icon: Icon(Icons.bolt_rounded, size: 18, color: Colors.amber.shade800),
                     label: const Text("Plantillas"),
@@ -886,15 +935,16 @@ class _TabAdminPerfil extends StatelessWidget {
                     icon: const Icon(Icons.add, size: 20),
                     label: const Text("Nueva"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: color, foregroundColor: Colors.white,
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       textStyle: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     onPressed: () => _mostrarDialogoTarea(context, null),
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
 
