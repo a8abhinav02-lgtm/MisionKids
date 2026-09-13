@@ -1,0 +1,100 @@
+# Plan de Implementación: Línea 1 - Gamificación y Retención Infantil 🚀
+
+Este plan detalla la arquitectura, modelo de datos y componentes visuales para implementar el **Sistema de Rachas Diarias (Streaks 🔥)**, **Medallas de Hitos Coleccionables** y **Feedback de Refuerzo Positivo**, diseñados para evitar el abandono del hábito y mantener motivados a los niños día a día.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> - Todo el desarrollo se realizará en una rama dedicada: **`feature/gamification-streaks-rewards`**.
+> - **Criterio de Racha**: Una racha suma un día cuando el niño completa y tiene aprobadas sus misiones del día (o al aprobar el padre la primera misión del día consecutivo).
+> - **Hitos de Medallas Automáticas**:
+>   - 🥉 **Racha de 3 Días**: Medalla de Bronce (*"El Constante"*).
+>   - 🥈 **Racha de 7 Días**: Medalla de Plata (*"Guerrero de la Semana"*).
+>   - 🥇 **Racha de 14 Días**: Medalla de Oro (*"Héroe Imparable"*).
+>   - 💎 **Racha de 30 Días**: Medalla de Diamante (*"Maestro de Hábitos"*).
+> - **Compatibilidad Multiplataforma**: Compatible de forma nativa tanto en Android como en Web (sin plugins dependientes de binarios propietarios).
+
+---
+
+## Proposed Changes
+
+### 1. Modelos y Capa de Datos
+
+#### [MODIFY] [perfil_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.dart)
+* Agregar los campos de gamificación:
+  - `@HiveField(11) int rachaActual`: Días consecutivos vigentes (por defecto 0).
+  - `@HiveField(12) int mejorRacha`: Récord histórico alcanzado (por defecto 0).
+  - `@HiveField(13) int ultimoDiaRacha`: Fecha en formato entero `YYYYMMDD` del último día en que se acreditó la racha.
+  - `@HiveField(14) List<String> medallas`: Identificadores de insignias desbloqueadas (ej. `['bronce_3', 'plata_7']`).
+* Actualizar métodos `toMap()` y `fromMap()` para sincronización transparente con Firestore y Hive.
+
+#### [MODIFY] [perfil_model.g.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.g.dart)
+* Actualizar el `PerfilAdapter` de Hive para serializar y deserializar los nuevos campos 11, 12, 13 y 14 con retrocompatibilidad para perfiles existentes.
+
+---
+
+### 2. Capa de Lógica de Negocio y Proveedores
+
+#### [MODIFY] [perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart)
+* Implementar método `registrarProgresoRacha(String perfilId, int fechaIdHoy)`:
+  - Si `ultimoDiaRacha == fechaIdHoy`: Ya acreditado hoy, no duplica.
+  - Si `ultimoDiaRacha == fechaIdAyer`: Día consecutivo cumplido ➔ `rachaActual++`.
+  - Si `ultimoDiaRacha < fechaIdAyer` o `0`: Racha interrumpida o inicio ➔ `rachaActual = 1`.
+  - Actualizar récord: `mejorRacha = max(mejorRacha, rachaActual)`.
+  - Evaluar y asignar medallas de hitos (3, 7, 14, 30 días).
+  - Persistir en Hive local y en Firestore en tiempo real.
+
+#### [MODIFY] [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)
+* Al aprobar una tarea en la lista de revisión, invocar automáticamente `perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy)` para premiar al niño en tiempo real.
+
+---
+
+### 3. Componentes de UI y Microinteracciones
+
+#### [NEW] [racha_badge.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_badge.dart)
+* Chip visual animado con fueguito 🔥 y gradiente ardiente (naranja/dorado):
+  - Microanimación de pulso continuo con `animate_do`.
+  - Muestra el número de días actuales de racha.
+  - Al presionarlo, abre el modal informativo `RachaInfoModal`.
+
+#### [NEW] [racha_info_modal.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_info_modal.dart)
+* Diálogo modal lúdico que muestra:
+  - Fueguito gigante animado con los días de racha actual.
+  - Mejor racha histórica del niño.
+  - Barra de progreso hacia la siguiente medalla.
+  - Consejos motivacionales para no romper el hábito.
+
+#### [MODIFY] [home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart)
+* Integrar el `RachaBadge` en el encabezado principal del niño al lado de su saldo de estrellas.
+
+#### [MODIFY] [historial_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/historial_screen.dart)
+* Añadir una tercera pestaña: **"Medallas 🏅"** que exhiba las insignias ganadas y las que están por desbloquear (Bronce, Plata, Oro, Diamante) con diseño tipo vitrina de trofeos.
+
+---
+
+### 4. Pruebas Automatizadas
+
+#### [NEW] [racha_gamification_test.dart](file:///c:/Users/angel/josue_tareas/test/racha_gamification_test.dart)
+* Pruebas unitarias de cálculo de racha:
+  - Días consecutivos (`ayer -> hoy`) incrementan la racha.
+  - Mismo día (`hoy -> hoy`) no duplica la racha.
+  - Días de inactividad (`hace 3 días -> hoy`) reinician la racha a 1.
+  - Asignación de medallas al cruzar los umbrales de 3, 7, 14 y 30 días.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- `flutter test`: Ejecutar las 8 pruebas actuales + la nueva suite de rachas (100% aprobado).
+- `flutter analyze`: Comprobar 0 advertencias y 0 errores de tipado en Dart.
+- `flutter build web --release --no-tree-shake-icons`: Verificar compilación Web.
+- `flutter build apk --debug`: Verificar compilación nativa Android.
+
+### Manual Verification
+- Entrar como niño ➔ Visualizar el badge con fueguito 🔥 de racha.
+- Tocar el badge ➔ Comprobar el diálogo informativo con récord y próxima medalla.
+- Aprobar una tarea desde el panel de padres ➔ Verificar que la racha del niño se actualice y persista.
+- Visitar el Salón de la Fama (`HistorialScreen`) ➔ Comprobar la vitrina de medallas.

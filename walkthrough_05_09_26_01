@@ -1,0 +1,117 @@
+# Sistema de Calificación de 1 a 5 Estrellas ("Califícanos")
+
+Se ha implementado con éxito la evolución del sistema de feedback en la rama: **`feature/feedback-rating-stars`**.
+
+---
+
+## 🌟 Cambios Implementados
+
+### 1. Interfaz de Usuario ([feedback_bottom_sheet.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/feedback_bottom_sheet.dart))
+* Se reemplazó el chip *"Felicitación"* por **"Califícanos"** (⭐).
+* Al seleccionar *"Califícanos"*, se despliega un panel interactivo con **5 estrellas doradas**.
+* Indicador dinámico de nivel de satisfacción en tiempo real:
+  - 1 ⭐: *Muy insatisfecho 😞*
+  - 2 ⭐: *Poco satisfecho 😐*
+  - 3 ⭐: *Aceptable 🙂*
+  - 4 ⭐: *¡Muy bueno! 😊*
+  - 5 ⭐: *¡Excelente experiencia! 🌟*
+* **Placeholders contextuales inteligentes**: El texto de sugerencia en el campo de texto se adapta automáticamente según las estrellas elegidas.
+* **Envío rápido (1 toque)**: El campo de texto es **opcional** en la categoría *"Califícanos"*.
+
+### 2. Capa de Datos y Firestore ([feedback_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/feedback_service.dart))
+* Se incorporó el campo `rating: int?` (1 a 5).
+* Los documentos en Firestore almacenan:
+  ```json
+  {
+    "category": "Califícanos",
+    "rating": 5,
+    "message": "Calificación: 5 estrellas",
+    "platform": "Android / Web",
+    "appVersion": "1.0.0+1",
+    "timestamp": "serverTimestamp()",
+    "userId": "..."
+  }
+  ```
+
+### 3. Reglas de Seguridad ([firestore.rules](file:///c:/Users/angel/josue_tareas/firestore.rules))
+* Regla actualizada para aceptar envíos con calificación válida (`rating >= 1 && rating <= 5`) incluso si el usuario no escribe un texto largo.
+
+---
+
+## 🧪 Pruebas y Validación
+* **Análisis estático (`flutter analyze`)**: 0 errores, 0 advertencias (`No issues found!`).
+* **Commit**: Confirmado en la rama `feature/feedback-rating-stars` (`commit 4f46842`).
+
+---
+
+## 🔀 Merge y Limpieza de Ramas
+* **Merge en `main`**: Completado exitosamente con estrategia no-fast-forward (`merge(feedback): integrate 1-5 star rating system and Firestore rules`).
+* **Ramas Locales**:
+  - `feature/feedback-rating-stars`: Eliminada (`git branch -d`).
+  - Rama activa: **`main`**.
+* **Ramas Remotas Obsoletas Identificadas**:
+  - `origin/feature/compartir-familia` (ya fusionada en `main`).
+  - `origin/feature/updates` (ya fusionada en `main`).
+  - `origin/cloudflare/workers-autoconfig` (commit obsoleto de configuración automática).
+
+---
+
+## 🛠️ Correcciones CI (GitHub Actions)
+1. **Paso `flutter test`**:
+   - **Causa**: El proyecto no contaba con directorio `test/`.
+   - **Solución**: Se creó la suite de pruebas unitarias [test/models_test.dart](file:///c:/Users/angel/josue_tareas/test/models_test.dart) (`commit e5ad8e4`).
+2. **Paso `build apk --debug` (`org.gradle.java.home` inválido en CI)**:
+   - **Causa**: `android/gradle.properties` contenía una ruta absoluta local fija (`C:/Users/angel/.jdks/jbr-21.0.11`). Al ejecutarse en los servidores de GitHub Actions (Ubuntu Linux), dicha ruta no existía y causaba el fallo de Gradle.
+   - **Solución**: Se removió `org.gradle.java.home` de [android/gradle.properties](file:///c:/Users/angel/josue_tareas/android/gradle.properties). Tu máquina local ya tiene la variable de entorno `JAVA_HOME` configurada a nivel de sistema, y GitHub Actions usa automáticamente el Java 21 configurado por `setup-java@v4`.
+   - **Validación**: Verificado localmente con `gradlew --version` (JVM 21.0.11 activa).
+   - **Commit**: Registrado en `main` (`commit 8fc3c41`).
+
+---
+
+# 🚀 Propuesta 1: Onboarding y Guiado Multimedia Contextual
+
+Implementado en la rama **`feature/onboarding-multimedia-tour`** (`commit 5a925c6`).
+
+## 🌟 Características Principales
+
+### 1. Experiencia Diferenciada por Rol
+* **Padre / Administrador**:
+  - **Slide 1 (Conexión Familiar)**: Cómo invitar a la pareja o tutores con el Código Familiar.
+  - **Slide 2 (Misiones y Hábitos)**: Creación de tareas con horarios (Mañana, Tarde, Noche) y puntos.
+  - **Slide 3 (Metas y Premios)**: Flujo de aprobación de revisiones y canje en la tienda.
+* **Niño / Perfil Infantil**:
+  - **Slide 1 (Cuartel de Aventuras)**: Bienvenida personalizada con su nombre y temática elegida.
+  - **Slide 2 (Gana Estrellas)**: Cómo marcar "Misión Cumplida" y acumular puntos en su alcancía.
+  - **Slide 3 (Alcanza tu Premio)**: Cómo ver la meta de ahorro y pedir premios en la tienda.
+
+### 2. Componentes Multimedia y de UX
+* [OnboardingModal](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/onboarding/onboarding_modal.dart):
+  - Modal flotante tipo Glassmorphism con bordes brillantes y sombras suaves.
+  - Indicadores dinámicos de progreso (pills expansibles).
+  - Microanimaciones vectoriales a 60 FPS con `animate_do` (ZoomIn, FadeInDown, Pulso).
+  - Botón **"Saltar"** siempre accesible para evitar frustración.
+  - Botón dinámico **"Siguiente"** / **"¡Entendido!"** / **"¡A cumplir misiones!"**.
+* [EmptyStateCard](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/empty_state_card.dart):
+  - Tarjeta ilustrada interactiva que reemplaza las pantallas vacías.
+  - Icono animado con pulso y botón de llamada a la acción ("Crear Primera Misión").
+* **Acceso Persistente (Botón Guía/Ayuda)**:
+  - **En Admin**: Botón `IconButton(Icons.help_outline_rounded)` en la barra superior.
+  - **En Niño**: Botón `Semantics` en el encabezado con icono de ayuda al lado de sus trofeos.
+
+### 3. Persistencia Multiplataforma ("Solo una vez")
+* [OnboardingService](file:///c:/Users/angel/josue_tareas/lib/services/onboarding_service.dart):
+  - Basado en Hive (`caja_onboarding_v1`).
+  - Compatible sin dependencias nativas complejas tanto en **Android** como en **Web (IndexedDB)**.
+  - Registra banderas independientes para el administrador y para cada perfil de niño (`perfilId`).
+
+---
+
+## 🧪 Pruebas y Validación
+* **Suite de Pruebas Automatizadas (`flutter test`)**: 8/8 pruebas aprobadas con éxito:
+  - 5 pruebas de modelos (`Tarea` y `Perfil`).
+  - 3 pruebas de `OnboardingService` ([onboarding_service_test.dart](file:///c:/Users/angel/josue_tareas/test/onboarding_service_test.dart)).
+* **Compilación Web**: `flutter build web --release --no-tree-shake-icons` completada exitosamente (`√ Built build\web`).
+
+
+
+

@@ -1,0 +1,64 @@
+# Walkthrough - Líneas 1, 2 y 3: Evolución de Misión Kids 🚀
+
+Rama de desarrollo unificada:
+```bash
+feature/gamification-streaks-rewards
+```
+
+---
+
+## 🌟 Línea 1: Gamificación y Retención Infantil (Rachas Diarias & Medallas)
+- **[perfil_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.dart)**: Persistencia de racha (`rachaActual`, `mejorRacha`, `ultimoDiaRacha`) y medallas (`bronce_3`, `plata_7`, `oro_14`, `diamante_30`).
+- **[perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart)**: Reglas de negocio de racha consecutiva, retención de récords históricos e indemnidad diaria.
+- **[racha_badge.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_badge.dart)** & **[racha_info_modal.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_info_modal.dart)**: Indicador de fuego interactivo en la cabecera infantil y modal motivacional.
+- **[historial_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/historial_screen.dart)**: Galería de trofeos y medallas en el Salón de la Fama.
+
+---
+
+## ⚡ Línea 2: Reducción de Fricción para Padres (Plantillas de 1 Toque y Analíticas)
+- **[plantillas_tareas_modal.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/plantillas_tareas_modal.dart)**:
+  - Catálogo de tareas preconfiguradas agrupadas por categorías (*Higiene, Orden, Estudio, Alimentación*).
+  - Botón de asignación con 1 solo toque y botón "Editar ✏️" para personalización rápida.
+- **[analiticas_habitos_modal.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/analiticas_habitos_modal.dart)**:
+  - Dashboard analítico con tasa de cumplimiento diaria, balance por bloques horarios (*Mañana, Tarde, Noche*), constancia de racha y avance hacia la meta de ahorro.
+- **[admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)**:
+  - Acciones rápidas incorporadas para abrir directamente el catálogo de plantillas y las analíticas de hábitos.
+
+---
+
+## 🔔 Línea 3: Conexión Familiar y Notificaciones Cruzadas
+
+### 1. Extensión del Servicio de Notificaciones
+- **[notification_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/notification_service.dart)**:
+  - Nuevo canal de alta prioridad en Android: `family_alerts` (*"Conexión Familiar Misión Kids"*).
+  - Nuevo método `mostrarNotificacionInmediata(...)` protegido contra excepciones y con degradación silenciosa en entornos sin soporte de notificaciones push locales (como Web o pruebas headless).
+
+### 2. Flujo Hijo ➡️ Padre (Solicitud de Revisión)
+- Al tocar *"Misión Cumplida"* en [home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart), se invoca `solicitarRevision(tarea, nombrePerfil: ...)` en [tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/tarea_provider.dart).
+- Se dispara automáticamente la alerta inmediata dirigida a los padres:
+  > *🔔 "¡[Nombre del Niño] ha completado '[Misión]'! Toca para revisar y aprobar."*
+
+### 3. Flujo Padre ➡️ Hijo (Aprobación y Acreditación de Estrellas)
+- Al aprobar una misión en [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart) (sea desde la lista de misiones por revisar o mediante aprobación manual), se invoca `aprobarTarea(tarea, nombrePerfil: ...)` en [tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/tarea_provider.dart).
+- Se dispara automáticamente la alerta de recompensa hacia el niño:
+  > *⭐ "¡Misión Aprobada! ¡Felicitaciones! Se han sumado +[X] estrellas a la alcancía de [Nombre]."*
+
+---
+
+## 🧪 Validación y Pruebas Realizadas
+
+1. **Pruebas Unitarias Automatizadas (`flutter test`)**:
+   - **21 de 21 tests superados exitosamente (100%)**.
+   - Banco de pruebas en [notificaciones_cruzadas_test.dart](file:///c:/Users/angel/josue_tareas/test/notificaciones_cruzadas_test.dart) verificando robustez de `NotificationService`, solicitudes de revisión Hijo ➡️ Padre y aprobaciones Padre ➡️ Hijo.
+2. **Análisis Estático (`flutter analyze`)**:
+   - **`No issues found!`** (0 errores, 0 advertencias).
+3. **Compilación Web (`flutter build web`)**:
+   - **`√ Built build\web`** superado en 67.2s.
+
+---
+
+## 📌 Estado del Repositorio
+- Commit confirmado:
+  ```text
+  feat(notifications): implement cross-notifications between children and parents for task review and approvals (Linea 3)
+  ```

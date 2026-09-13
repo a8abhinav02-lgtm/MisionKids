@@ -1,0 +1,75 @@
+# Walkthrough - Línea 1: Gamificación y Retención Infantil (Rachas Diarias & Medallas)
+
+Se ha completado con éxito la implementación integral de la **Línea 1** de la estrategia de evolución en la rama `feature/gamification-streaks-rewards`.
+
+---
+
+## 🚀 Cambios Implementados
+
+### 1. Modelo de Datos y Compatibilidad
+- **[perfil_model.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.dart)**:
+  - Nuevos campos incorporados con retrocompatibilidad:
+    - `rachaActual` (int): Días consecutivos cumpliendo misiones.
+    - `mejorRacha` (int): Récord histórico del niño.
+    - `ultimoDiaRacha` (int en formato YYYYMMDD): Marca del último día registrado.
+    - `medallas` (List\<String\>): Identificadores de medallas desbloqueadas (`bronce_3`, `plata_7`, `oro_14`, `diamante_30`).
+  - Serialización y deserialización actualizadas para Hive y Firestore.
+- **[perfil_model.g.dart](file:///c:/Users/angel/josue_tareas/lib/models/perfil_model.g.dart)**:
+  - TypeAdapter de Hive actualizado para leer campos 11-14 con valores por defecto si provienen de cajas creadas previamente.
+
+### 2. Lógica de Negocio y Reglas de Gamificación
+- **[perfiles_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/perfiles_provider.dart)**:
+  - Método `registrarProgresoRacha(String perfilId, int fechaIdHoy)`:
+    - **Primer día / Sin racha previa**: Establece racha en `1`.
+    - **Mismo día**: Evita conteo doble y retorna `false`.
+    - **Día inmediatamente anterior cumplido**: Incrementa la racha en `+1`.
+    - **Racha rota (día saltado)**: Reinicia la racha a `1` pero preserva intacto el récord histórico `mejorRacha` y las medallas obtenidas.
+    - **Adjudicación automática de medallas**: Al alcanzar 3, 7, 14 o 30 días, añade la medalla correspondiente sin duplicados.
+    - Sincronización transparente tanto en Hive local como en Firestore si hay sesión activa.
+    - Adaptador Firestore desacoplado/perezoso para ejecución fluida en pruebas unitarias sin dependencias externas.
+
+### 3. Disparador en Pantalla de Padres
+- **[admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)**:
+  - Al aprobar cualquier tarea en revisión desde el panel del tutor/padre, se invoca automáticamente `registrarProgresoRacha` para el perfil del niño.
+
+### 4. Componentes Visuales y Experiencia Infantil
+- **[racha_badge.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_badge.dart)**:
+  - Chip con gradiente ígneo (`#FF8C00` a `#FF3D00`), icono de fuego animado y contador de días.
+  - Al presionarlo, despliega el modal informativo interactivo.
+- **[racha_info_modal.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/gamification/racha_info_modal.dart)**:
+  - Diálogo con efecto de pulso y diseño lúdico.
+  - Muestra racha actual, récord histórico, barra de progreso hacia la siguiente medalla y mensajes motivacionales dinámicos.
+- **[home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart)**:
+  - El badge `RachaBadge` se encuentra integrado visualmente en la tarjeta de saldo del niño, manteniéndolo visible en todo momento.
+- **[historial_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/historial_screen.dart)**:
+  - Se añadió la pestaña **"Medallas 🏅"** al Salón de la Fama.
+  - Galería visual con estado desbloqueado/bloqueado para Bronce (3d), Plata (7d), Oro (14d) y Diamante (30d).
+
+---
+
+## 🧪 Pruebas y Validación Realizada
+
+### 1. Pruebas Unitarias Automatizadas (`flutter test`)
+- Creado banco de pruebas exhaustivo en **[racha_gamification_test.dart](file:///c:/Users/angel/josue_tareas/test/racha_gamification_test.dart)** cubriendo:
+  - Valores por defecto del modelo.
+  - Serialización y deserialización completa.
+  - Inicio de racha en día 1.
+  - Idempotencia en el mismo día (sin incrementos duplicados).
+  - Días consecutivos e incremento progresivo.
+  - Desbloqueo de medalla al alcanzar el umbral (día 3).
+  - Salto de días con rotura de racha, preservación de récord previo y medallas acumuladas.
+- **Resultado**: `14 of 14 tests passed` (100% exitoso).
+
+### 2. Análisis Estático (`flutter analyze`)
+- **Resultado**: `No issues found!` (0 advertencias, 0 errores).
+
+### 3. Compilación Web (`flutter build web`)
+- **Resultado**: `√ Built build\web` compilado exitosamente en modo release.
+
+---
+
+## 📌 Estado de Git
+- Los cambios están confirmados en el commit `feat(gamification): implement daily streak system, milestone medals, and showcase tab (Linea 1)` dentro de la rama:
+  ```bash
+  feature/gamification-streaks-rewards
+  ```

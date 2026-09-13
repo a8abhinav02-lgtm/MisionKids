@@ -1,0 +1,65 @@
+# Plan de Implementación - Línea 3: Conexión Familiar y Notificaciones Cruzadas 🔔
+
+Este plan aborda la **Línea 3** de la [estrategia de desarrollo futuro](file:///c:/Users/angel/josue_tareas/estrategia_desarrollo_futuro.md) en la rama activa `feature/gamification-streaks-rewards`.
+
+El objetivo es cerrar la brecha de comunicación entre padres e hijos mediante notificaciones inmediatas y alertas contextuales cada vez que un niño completa una misión o un padre la aprueba.
+
+---
+
+## 👥 Decisiones y Enfoque de Diseño
+
+### 1. Extensión de `NotificationService`
+- **Widget / Servicio**: `lib/services/notification_service.dart`
+- **Nuevo Canal Android**: `family_alerts` ("Conexión Familiar Misión Kids", alta prioridad, vibración y sonido).
+- **Nuevo Método**: `mostrarNotificacionInmediata({required int id, required String titulo, required String cuerpo, String? payload})`.
+- **Compatibilidad Web / Desktop**: En entornos no móviles o sin permisos activos, el servicio se degrada limpiamente sin arrojar excepciones.
+
+### 2. Flujo Hijo ➡️ Padre (Solicitud de Revisión)
+- Al pulsar **"Misión Cumplida"** en [home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart):
+  - Se activa la notificación dirigida a los tutores:
+    > *🔔 "¡[Nombre del Niño] ha completado '[Misión]'! Toca para revisar y aprobar."*
+  - En la interfaz web/compartida, se muestra retroalimentación visual inmediata.
+
+### 3. Flujo Padre ➡️ Hijo (Aprobación y Recompensas)
+- Al pulsar **"Aprobar"** en [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart):
+  - Se activa la notificación hacia el niño:
+    > *⭐ "¡Misión aprobada! Se han sumado +[X] estrellas a la alcancía de [Nombre]."*
+- Al canjear un premio o aplicar sanción:
+  - Notificaciones contextuales claras para mantener la transparencia en la economía de estrellas.
+
+### 4. Centro de Notificaciones y Alertas en UI
+- Para que la experiencia funcione en **Web** y dispositivos compartidos, crearemos un widget de banner/snackbar flotante enriquecido que notifique en vivo a los usuarios cuando una tarea cambie de estado.
+
+---
+
+## 🛠️ Cambios Propuestos
+
+### Servicios y Lógica
+
+#### [MODIFY] [notification_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/notification_service.dart)
+- Agregar canal `family_alerts`.
+- Implementar `mostrarNotificacionInmediata(...)`.
+
+#### [MODIFY] [tarea_provider.dart](file:///c:/Users/angel/josue_tareas/lib/providers/tarea_provider.dart)
+- En `solicitarRevision(tarea, nombrePerfil)`: Disparar notificación inmediata para padres.
+- En `aprobarTarea(tarea, nombrePerfil)`: Disparar notificación inmediata de recompensa para el niño.
+
+#### [MODIFY] [admin_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/admin_screen.dart)
+- Pasar el nombre del perfil al aprobar/rechazar tareas y vincular el feedback sonoro/visual.
+
+#### [MODIFY] [home_nino_screen.dart](file:///c:/Users/angel/josue_tareas/lib/ui/screens/home_nino_screen.dart)
+- Pasar el nombre del niño al solicitar revisión de una tarea.
+
+---
+
+## 🧪 Plan de Verificación
+
+### Pruebas Unitarias Automatizadas
+- Crear `test/notificaciones_cruzadas_test.dart`:
+  - Verificar que `NotificationService.mostrarNotificacionInmediata` no falle en entorno de tests/web (`kIsWeb` y tests headless).
+  - Verificar que `solicitarRevision` y `aprobarTarea` disparen los hooks de notificación correctamente.
+- Ejecutar `flutter test` asegurando que todos los tests pasen.
+
+### Análisis Estático y Compilación Web
+- Ejecutar `flutter analyze` (0 errores).
+- Ejecutar `flutter build web --release --no-tree-shake-icons`.
