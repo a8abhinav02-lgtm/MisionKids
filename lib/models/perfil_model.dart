@@ -37,6 +37,18 @@ class Perfil extends HiveObject {
   @HiveField(10)
   List<Map<dynamic, dynamic>> solicitudesCanje; // Lista de solicitudes de canje en espera
 
+  @HiveField(11)
+  int rachaActual; // Días consecutivos actuales cumpliendo misiones
+
+  @HiveField(12)
+  int mejorRacha; // Récord histórico de racha de días
+
+  @HiveField(13)
+  int ultimoDiaRacha; // Fecha en formato YYYYMMDD del último día de racha acreditado
+
+  @HiveField(14)
+  List<String> medallas; // IDs de medallas ganadas (ej: 'bronce_3', 'plata_7', etc.)
+
   Perfil({
     required this.id,
     required this.nombre,
@@ -49,6 +61,10 @@ class Perfil extends HiveObject {
     this.frecuenciaRecordatorio = 10,
     this.catalogoPremios = const [],
     this.solicitudesCanje = const [],
+    this.rachaActual = 0,
+    this.mejorRacha = 0,
+    this.ultimoDiaRacha = 0,
+    this.medallas = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -64,6 +80,10 @@ class Perfil extends HiveObject {
       'frecuenciaRecordatorio': frecuenciaRecordatorio,
       'catalogoPremios': catalogoPremios,
       'solicitudesCanje': solicitudesCanje,
+      'rachaActual': rachaActual,
+      'mejorRacha': mejorRacha,
+      'ultimoDiaRacha': ultimoDiaRacha,
+      'medallas': medallas,
     };
   }
 
@@ -80,6 +100,10 @@ class Perfil extends HiveObject {
       frecuenciaRecordatorio: (map['frecuenciaRecordatorio'] as num?)?.toInt() ?? 10,
       catalogoPremios: List<Map<dynamic, dynamic>>.from(map['catalogoPremios'] ?? []),
       solicitudesCanje: List<Map<dynamic, dynamic>>.from(map['solicitudesCanje'] ?? []),
+      rachaActual: (map['rachaActual'] as num?)?.toInt() ?? 0,
+      mejorRacha: (map['mejorRacha'] as num?)?.toInt() ?? 0,
+      ultimoDiaRacha: (map['ultimoDiaRacha'] as num?)?.toInt() ?? 0,
+      medallas: List<String>.from(map['medallas'] ?? []),
     );
   }
 }

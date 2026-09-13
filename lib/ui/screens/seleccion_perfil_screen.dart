@@ -11,6 +11,7 @@ import 'esperando_aprobacion_screen.dart';
 import 'home_nino_screen.dart';
 import 'admin_screen.dart';
 import '../widgets/feedback_fab.dart';
+import '../widgets/politica_privacidad_modal.dart';
 
 class SeleccionPerfilScreen extends StatelessWidget {
   const SeleccionPerfilScreen({super.key});
@@ -183,6 +184,16 @@ class SeleccionPerfilScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => PoliticaPrivacidadModal.mostrar(context),
+                icon: const Icon(Icons.shield_outlined, size: 16, color: Colors.grey),
+                label: const Text(
+                  "Política de Privacidad y Menores",
+                  style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.underline),
+                ),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -211,18 +222,38 @@ class SeleccionPerfilScreen extends StatelessWidget {
             const Text("Zona de Padres"),
           ],
         ),
-        content: TextField(
-          controller: pinController,
-          keyboardType: TextInputType.number,
-          obscureText: true,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: "PIN",
-            prefixIcon: const Icon(Icons.password),
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: "PIN",
+                prefixIcon: const Icon(Icons.password),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _mostrarDialogoRecuperarPin(context, authProv);
+                },
+                child: const Text(
+                  "¿Olvidaste tu PIN? 🔑",
+                  style: TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -248,6 +279,191 @@ class SeleccionPerfilScreen extends StatelessWidget {
             child: const Text("Entrar"),
           ),
         ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoRecuperarPin(BuildContext context, AuthProvider authProv) {
+    final passwordCtrl = TextEditingController();
+    final nuevoPinCtrl = TextEditingController();
+    final confirmPinCtrl = TextEditingController();
+    bool cargando = false;
+    String? errorMsg;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateModal) {
+          final email = authProv.emailPadre.isNotEmpty ? authProv.emailPadre : (authProv.usuario?.email ?? '');
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.lock_reset, color: Colors.amber.shade800),
+                ),
+                const SizedBox(width: 12),
+                const Text("Recuperar PIN"),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    email.isNotEmpty
+                        ? "Para verificar que eres el tutor legal de la cuenta ($email), ingresa tu contraseña:"
+                        : "Define tu nuevo PIN de acceso de 4 dígitos:",
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  ),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: "Contraseña de la cuenta",
+                        prefixIcon: const Icon(Icons.key),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nuevoPinCtrl,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    decoration: InputDecoration(
+                      labelText: "Nuevo PIN (4 dígitos)",
+                      prefixIcon: const Icon(Icons.pin),
+                      counterText: "",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: confirmPinCtrl,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    decoration: InputDecoration(
+                      labelText: "Confirmar nuevo PIN",
+                      prefixIcon: const Icon(Icons.check),
+                      counterText: "",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  if (errorMsg != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      errorMsg!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: () async {
+                          final enviado = await authProv.enviarCorreoRestablecimientoPassword();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  enviado
+                                      ? "Enlace enviado a $email. Revisa tu bandeja de entrada."
+                                      : "No se pudo enviar el correo. Verifica tu conexión.",
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          "¿Olvidaste también tu contraseña? Enviar correo",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.indigo),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancelar"),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                onPressed: cargando
+                    ? null
+                    : () async {
+                        final nuevoPin = nuevoPinCtrl.text.trim();
+                        final confirmPin = confirmPinCtrl.text.trim();
+
+                        if (nuevoPin.length != 4 || nuevoPin != confirmPin) {
+                          setStateModal(() {
+                            errorMsg = "El nuevo PIN debe ser de 4 dígitos y coincidir.";
+                          });
+                          return;
+                        }
+
+                        if (email.isNotEmpty && passwordCtrl.text.isEmpty) {
+                          setStateModal(() {
+                            errorMsg = "Ingresa tu contraseña actual para confirmar.";
+                          });
+                          return;
+                        }
+
+                        setStateModal(() {
+                          cargando = true;
+                          errorMsg = null;
+                        });
+
+                        final exito = await authProv.restablecerPinConContrasena(
+                          password: passwordCtrl.text,
+                          nuevoPin: nuevoPin,
+                        );
+
+                        if (exito) {
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("¡PIN actualizado con éxito! Ya puedes ingresar."),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          setStateModal(() {
+                            cargando = false;
+                            errorMsg = "Contraseña incorrecta o error al sincronizar.";
+                          });
+                        }
+                      },
+                child: cargando
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text("Guardar PIN"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

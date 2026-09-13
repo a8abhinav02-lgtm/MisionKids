@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tarea_model.dart';
+import '../services/notification_service.dart';
 
 class TareaProvider extends ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore? _customDb;
   Box<Tarea>? _cajaTareas;
+
+  TareaProvider({FirebaseFirestore? firestore}) : _customDb = firestore;
+
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
   
   bool isLoading = true;
   String _uid = '';
@@ -165,6 +170,38 @@ class TareaProvider extends ChangeNotifier {
     return _todasLasTareasData.where((t) => t.estado == 'revision').toList();
   }
 
+  List<Tarea> tareasProgramadasHoy(String perfilId) {
+    return _filtrarTareasPorFecha(_tareasDelPerfil(perfilId), DateTime.now())
+        .where((t) => t.bloque != 'sancion')
+        .toList();
+  }
+
+  double porcentajeCumplimientoHoy(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    if (programadas.isEmpty) return 0.0;
+    final completadas = programadas.where((t) => t.estado == 'aprobada' && t.ultimoDiaCompletado == fechaIdHoy).length;
+    return completadas / programadas.length;
+  }
+
+  Map<String, int> conteoPorBloque(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    return {
+      'manana': programadas.where((t) => t.bloque == 'manana').length,
+      'tarde': programadas.where((t) => t.bloque == 'tarde').length,
+      'noche': programadas.where((t) => t.bloque == 'noche').length,
+    };
+  }
+
+  Map<String, int> conteoCompletadasPorBloque(String perfilId) {
+    final programadas = tareasProgramadasHoy(perfilId);
+    final completadas = programadas.where((t) => t.estado == 'aprobada' && t.ultimoDiaCompletado == fechaIdHoy);
+    return {
+      'manana': completadas.where((t) => t.bloque == 'manana').length,
+      'tarde': completadas.where((t) => t.bloque == 'tarde').length,
+      'noche': completadas.where((t) => t.bloque == 'noche').length,
+    };
+  }
+
   Future<void> agregarTarea({
     required String nombre, required int puntos, required bool obligatoria,
     required IconData icon, required String bloque, required String tipoRecurrencia,
@@ -234,7 +271,7 @@ class TareaProvider extends ChangeNotifier {
     return sancion;
   }
 
-  void solicitarRevision(Tarea tarea) {
+  void solicitarRevision(Tarea tarea, {String? nombrePerfil}) {
     if (tarea.estado == 'pendiente') {
       tarea.estado = 'revision';
       if (_uid.isNotEmpty) {
@@ -242,6 +279,15 @@ class TareaProvider extends ChangeNotifier {
       } else {
         tarea.save();
       }
+
+      // Notificación inmediata para padres (Hijo ➡️ Padre)
+      final nombreHijo = (nombrePerfil != null && nombrePerfil.isNotEmpty) ? nombrePerfil : 'Tu hijo';
+      NotificationService.mostrarNotificacionInmediata(
+        id: (tarea.id.hashCode & 0x7FFFFFFF) % 100000,
+        titulo: '🔔 ¡Misión lista para revisión!',
+        cuerpo: '¡$nombreHijo ha completado "${tarea.nombre}"! Toca para revisar y aprobar.',
+      );
+
       notifyListeners();
     }
   }
@@ -256,12 +302,13 @@ class TareaProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> aprobarTarea(Tarea tarea) async {
+  Future<bool> aprobarTarea(Tarea tarea, {String? nombrePerfil}) async {
     if (tarea.estado == 'revision') {
+      bool aprobada = false;
       if (_uid.isNotEmpty) {
         final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
         try {
-          return await _db.runTransaction((transaction) async {
+          aprobada = await _db.runTransaction((transaction) async {
             final snapshot = await transaction.get(docRef);
             if (!snapshot.exists) return false;
             final data = snapshot.data()!;
@@ -282,18 +329,31 @@ class TareaProvider extends ChangeNotifier {
         tarea.ultimoDiaCompletado = fechaIdHoy;
         await tarea.save();
         notifyListeners();
+        aprobada = true;
+      }
+
+      if (aprobada) {
+        // Notificación inmediata para el niño (Padre ➡️ Hijo)
+        final sufijoNombre = (nombrePerfil != null && nombrePerfil.isNotEmpty) ? ' de $nombrePerfil' : '';
+        NotificationService.mostrarNotificacionInmediata(
+          id: ((tarea.id.hashCode & 0x7FFFFFFF) % 100000) + 1,
+          titulo: '⭐ ¡Misión Aprobada!',
+          cuerpo: '¡Felicitaciones! Se han sumado +${tarea.puntos} estrellas a la alcancía$sufijoNombre.',
+        );
         return true;
       }
     }
     return false;
   }
   
-  Future<bool> aprobarTareaManual(Tarea tarea) async {
+  Future<bool> aprobarTareaManual(Tarea tarea, {String? nombrePerfil}) async {
     bool yaEstabaPagada = (tarea.estado == 'aprobada' && tarea.ultimoDiaCompletado == fechaIdHoy);
+    bool aprobada = false;
+
     if (_uid.isNotEmpty) {
       final docRef = _db.collection('familias').doc(_uid).collection('tareas').doc(tarea.id);
       try {
-        return await _db.runTransaction((transaction) async {
+        aprobada = await _db.runTransaction((transaction) async {
           final snapshot = await transaction.get(docRef);
           if (!snapshot.exists) return false;
           final data = snapshot.data()!;
@@ -316,10 +376,21 @@ class TareaProvider extends ChangeNotifier {
         tarea.ultimoDiaCompletado = fechaIdHoy;
         await tarea.save();
         notifyListeners();
-        return true;
+        aprobada = true;
       }
-      return false;
     }
+
+    if (aprobada) {
+      final sufijoNombre = (nombrePerfil != null && nombrePerfil.isNotEmpty) ? ' de $nombrePerfil' : '';
+      NotificationService.mostrarNotificacionInmediata(
+        id: ((tarea.id.hashCode & 0x7FFFFFFF) % 100000) + 1,
+        titulo: '⭐ ¡Misión Aprobada!',
+        cuerpo: '¡Felicitaciones! Se han sumado +${tarea.puntos} estrellas a la alcancía$sufijoNombre.',
+      );
+      return true;
+    }
+
+    return false;
   }
 
   bool tieneObligatoriasPendientes(String perfilId) {

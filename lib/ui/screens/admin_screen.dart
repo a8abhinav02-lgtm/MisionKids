@@ -16,6 +16,9 @@ import '../widgets/feedback_fab.dart';
 import '../../services/onboarding_service.dart';
 import '../widgets/onboarding/onboarding_modal.dart';
 import '../widgets/empty_state_card.dart';
+import '../widgets/plantillas_tareas_modal.dart';
+import '../widgets/analiticas_habitos_modal.dart';
+import '../widgets/politica_privacidad_modal.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -375,6 +378,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                   onPressed: _mostrarOnboardingAdmin,
                                   tooltip: "Guía de administración",
                                 ),
+                                IconButton(
+                                  icon: const Icon(Icons.shield_outlined, color: Colors.amber, size: 20),
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  onPressed: () => PoliticaPrivacidadModal.mostrar(context),
+                                  tooltip: "Política de Privacidad y Menores",
+                                ),
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -690,6 +700,30 @@ class _TabAdminPerfil extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _AccionRapida(
+                      icono: Icons.bolt_rounded,
+                      label: "Plantillas Rápidas",
+                      color: Colors.amber.shade800,
+                      onTap: () => _mostrarCatalogoPlantillas(context),
+                      semanticLabel: "Catálogo de hábitos y tareas preconfiguradas en 1 toque.",
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _AccionRapida(
+                      icono: Icons.analytics_rounded,
+                      label: "Hábitos & Stats",
+                      color: Colors.teal.shade700,
+                      onTap: () => _mostrarAnaliticasHabitos(context),
+                      semanticLabel: "Métricas y porcentaje de cumplimiento de hábitos.",
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AccionRapida(
                       icono: Icons.warning_amber_rounded,
                       label: "Sanción / Multa",
                       color: Colors.red,
@@ -697,9 +731,7 @@ class _TabAdminPerfil extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(), // Espacio vacío para balancear
-                  ),
+                  Expanded(child: Container()),
                 ],
               ),
             ],
@@ -753,9 +785,10 @@ class _TabAdminPerfil extends StatelessWidget {
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             onPressed: () async {
-                              final success = await tareaProv.aprobarTarea(tarea);
+                              final success = await tareaProv.aprobarTarea(tarea, nombrePerfil: perfil.nombre);
                               if (success) {
                                 perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                                await perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy);
                               }
                             },
                           ),
@@ -830,21 +863,88 @@ class _TabAdminPerfil extends StatelessWidget {
         // MISIONES EXISTENTES
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Misiones de ${perfil.nombre}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700)),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text("Nueva"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: color, foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                onPressed: () => _mostrarDialogoTarea(context, null),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 380;
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Misiones de ${perfil.nombre}",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: Icon(Icons.bolt_rounded, size: 18, color: Colors.amber.shade800),
+                            label: const Text("Plantillas"),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.amber.shade900,
+                              side: BorderSide(color: Colors.amber.shade400),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            onPressed: () => _mostrarCatalogoPlantillas(context),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.add, size: 20),
+                            label: const Text("Nueva"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () => _mostrarDialogoTarea(context, null),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Misiones de ${perfil.nombre}",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.grey.shade700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    icon: Icon(Icons.bolt_rounded, size: 18, color: Colors.amber.shade800),
+                    label: const Text("Plantillas"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.amber.shade900,
+                      side: BorderSide(color: Colors.amber.shade400),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    onPressed: () => _mostrarCatalogoPlantillas(context),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text("Nueva"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => _mostrarDialogoTarea(context, null),
+                  ),
+                ],
+              );
+            },
           ),
         ),
 
@@ -944,11 +1044,12 @@ class _TabAdminPerfil extends StatelessWidget {
                                       padding: const EdgeInsets.all(4),
                                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                       onPressed: () async {
-                                        final success = await tareaProv.aprobarTareaManual(tarea);
+                                        final success = await tareaProv.aprobarTareaManual(tarea, nombrePerfil: perfil.nombre);
                                         if (success) {
                                           perfilesProv.agregarDinero(perfil.id, tarea.puntos);
+                                          await perfilesProv.registrarProgresoRacha(perfil.id, tareaProv.fechaIdHoy);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados.")));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\$${tarea.puntos} agregados y racha actualizada.")));
                                           }
                                         } else {
                                           if (context.mounted) {
@@ -1069,6 +1170,29 @@ class _TabAdminPerfil extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _BottomSheetTiendaAdmin(perfilId: perfil.id, perfilesProv: perfilesProv),
+    );
+  }
+
+  void _mostrarCatalogoPlantillas(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PlantillasTareasModal(
+        perfilId: perfil.id,
+        nombreHijo: perfil.nombre,
+      ),
+    );
+  }
+
+  void _mostrarAnaliticasHabitos(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AnaliticasHabitosModal(
+        perfil: perfil,
+      ),
     );
   }
 }

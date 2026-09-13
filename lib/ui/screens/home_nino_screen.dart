@@ -12,6 +12,7 @@ import '../../services/notification_service.dart';
 import 'historial_screen.dart';
 import '../../services/onboarding_service.dart';
 import '../widgets/onboarding/onboarding_modal.dart';
+import '../widgets/gamification/racha_badge.dart';
 
 class HomeNinoScreen extends StatefulWidget {
   const HomeNinoScreen({super.key});
@@ -196,7 +197,13 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  Text("Mi Saldo", style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text("Mi Saldo", style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+                                      RachaBadge(perfil: perfilActual),
+                                    ],
+                                  ),
                                   const SizedBox(height: 4),
                                   Text(
                                     "\$ $dineroActual",
@@ -448,7 +455,7 @@ class _HomeNinoScreenState extends State<HomeNinoScreen> {
                     }
 
                     _confettiController.play();
-                    tareaProv.solicitarRevision(tarea);
+                    tareaProv.solicitarRevision(tarea, nombrePerfil: perfilesProv.perfilActivo?.nombre);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

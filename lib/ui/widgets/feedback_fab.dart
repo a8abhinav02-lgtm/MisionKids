@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'feedback_bottom_sheet.dart';
+import 'parental_gate_dialog.dart';
 
 class FeedbackFab extends StatelessWidget {
   final bool isExtended;
@@ -13,6 +14,13 @@ class FeedbackFab extends StatelessWidget {
     this.tooltip = 'Enviar sugerencias o comentarios',
   });
 
+  void _abrirFeedbackConPuertaParental(BuildContext context) {
+    ParentalGateDialog.verificar(
+      context,
+      onExito: () => FeedbackBottomSheet.show(context),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -20,7 +28,7 @@ class FeedbackFab extends StatelessWidget {
 
     if (isExtended) {
       return FloatingActionButton.extended(
-        onPressed: () => FeedbackBottomSheet.show(context),
+        onPressed: () => _abrirFeedbackConPuertaParental(context),
         icon: const Icon(Icons.feedback_outlined, color: Colors.white),
         label: Text(
           label,
@@ -37,7 +45,7 @@ class FeedbackFab extends StatelessWidget {
     }
 
     return FloatingActionButton(
-      onPressed: () => FeedbackBottomSheet.show(context),
+      onPressed: () => _abrirFeedbackConPuertaParental(context),
       tooltip: tooltip,
       backgroundColor: primaryColor,
       elevation: 4,
