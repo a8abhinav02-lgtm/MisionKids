@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/secure_storage_service.dart';
 import '../config/app_config.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth? _customAuth;
@@ -416,7 +417,10 @@ class AuthProvider extends ChangeNotifier {
         final versionAndroid = data['version_android']?.toString() ?? '';
         final urlAndroid = data['url_android']?.toString() ?? '';
         
-        if (versionAndroid.isNotEmpty && _debeActualizar(kAppVersion, versionAndroid)) {
+        final packageInfo = await PackageInfo.fromPlatform();
+        final versionLocal = packageInfo.version;
+        
+        if (versionAndroid.isNotEmpty && _debeActualizar(versionLocal, versionAndroid)) {
           tieneActualizacion = true;
           urlDescargaActualizacion = urlAndroid;
           notifyListeners();
