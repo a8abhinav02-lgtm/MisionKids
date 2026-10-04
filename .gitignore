@@ -55,3 +55,29 @@ app.*.map.json
 
 # Habilidades locales del agente de IA
 .skills/
+
+# Planes de implementación, bitácoras y walkthroughs (solo locales)
+implementation_plan*
+walkthrough*
+task_*
+taskDOFA.md
+sub_plan_*
+
+# Archivos de texto y registros locales
+/*.txt
+!CMakeLists.txt
+*.iml
+analyze_result.txt
+flutter_analyze*.txt
+formulario*.txt
+prompts_cortos*.txt
+configuracion_antigravity*.txt
+BITACORA_BUG*.txt
+
+# Documentos de análisis e investigación local
+qa_evaluator.md
+evaluacion_qa_release.md
+dofa_analisis_*.md
+analisis_*.md
+estrategia_desarrollo_*.md
+Optimizing Healthy Habits App.md
