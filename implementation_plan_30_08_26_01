@@ -1,0 +1,51 @@
+# Plan de Implementación: Evolución a "Califícanos" con Escala de 1 a 5 Estrellas
+
+Este plan detalla la transformación de la categoría "Felicitación" por "Califícanos", integrando un selector visual interactivo de 1 a 5 estrellas, placeholders dinámicos, soporte para texto opcional y persistencia de la métrica numérica en Firestore.
+
+## User Review Required
+
+> [!NOTE]
+> Todo el desarrollo se realizará en una rama independiente: **`feature/feedback-rating-stars`**.
+
+> [!IMPORTANT]
+> - Cuando el usuario seleccione **"Califícanos"**, aparecerá un selector interactivo de 5 estrellas con indicador de satisfacción (*Muy insatisfecho* a *¡Excelente!*).
+> - En la categoría "Califícanos", el campo de texto se vuelve **opcional** para que calificar sea instantáneo (1 solo toque).
+> - Se registrará el campo `rating: 1..5` en Cloud Firestore.
+
+---
+
+## Proposed Changes
+
+### 1. Servicios y Capa de Datos
+
+#### [MODIFY] [feedback_service.dart](file:///c:/Users/angel/josue_tareas/lib/services/feedback_service.dart)
+- Agregar parámetro opcional `int? rating` al método `submitFeedback(...)`.
+- Incluir `'rating': rating` en el mapa de datos guardado en Firestore.
+
+#### [MODIFY] [firestore.rules](file:///c:/Users/angel/josue_tareas/firestore.rules)
+- Actualizar la regla de validación de `feedback` para permitir envíos con `rating` válido (1 a 5) aun cuando el mensaje de texto sea breve u opcional.
+
+---
+
+### 2. Capa de UI y Componentes
+
+#### [MODIFY] [feedback_bottom_sheet.dart](file:///c:/Users/angel/josue_tareas/lib/ui/widgets/feedback_bottom_sheet.dart)
+- Cambiar chip de categoría `'Felicitación'` por `'Califícanos'` con icono `Icons.star_rounded` y color dorado.
+- Agregar estado interactivo `int _rating = 5` con micro-animaciones al pulsar cada estrella.
+- Mostrar selector de 5 estrellas doradas con etiqueta descriptiva de nivel de satisfacción.
+- Placeholder dinámico inteligente según el puntaje seleccionado.
+- Validación flexible: Si la categoría es "Califícanos", el mensaje de texto es opcional.
+
+---
+
+## Verification Plan
+
+### Automated & Static Tests
+- `flutter analyze`: Comprobar que no haya errores de lint o tipado.
+- `flutter build web --release --no-tree-shake-icons`: Validar compilación en Web.
+- `flutter build apk --debug`: Validar compilación en Android.
+
+### Manual Verification
+- Probar la interacción de seleccionar estrellas (1 a 5) y verificar el cambio visual y de textos.
+- Probar envío sin texto en "Califícanos" y con texto en otras categorías.
+- Verificar que el documento en Firestore contenga `category: 'Califícanos'` y `rating: 5`.

@@ -1,0 +1,42 @@
+# Guía de Habilidades Técnicas del Proyecto (Android Skills)
+
+Este proyecto tiene acceso a habilidades oficiales de mejores prácticas de Android ubicadas en la carpeta `.skills/`.
+
+## Instrucciones para el Asistente / Agente:
+Cuando el usuario te pida una tarea relacionada con los siguientes temas, DEBES consultar el archivo `SKILL.md` correspondiente antes de escribir o modificar código:
+
+1. **Diseño de pantalla completa (Edge-to-Edge):**
+   - Ruta: `.skills/system/edge-to-edge/SKILL.md`
+   - Consultar cuando: se modifiquen insets, barras de estado, navegación o diseño inmersivo.
+
+2. **Optimización de compilación y R8 (Proguard / Minificación):**
+   - Ruta: `.skills/performance/r8-analyzer/SKILL.md`
+   - Consultar cuando: haya problemas de reducción de APK, reglas de Proguard o errores de compilación con R8.
+
+3. **Migración o actualización de AGP (Android Gradle Plugin):**
+   - Ruta: `.skills/build-system/agp/agp-9-upgrade/SKILL.md`
+   - Consultar cuando: se actualice Gradle o dependencias del build.
+
+4. **Jetpack Compose UI:**
+   - Ruta: `.skills/jetpack-compose/SKILL.md`
+   - Consultar cuando: se refactoricen componentes, estados o layouts en Compose.
+
+5. **Cámara (CameraX):**
+   - Ruta: `.skills/camera/camerax/SKILL.md`
+   - Consultar cuando: se implemente captura de fotos, video o vista previa de cámara.
+
+6. **Pruebas y Tests:**
+   - Ruta: `.skills/testing/testing-setup/SKILL.md`
+   - Consultar cuando: se configuren tests unitarios o de interfaz.
+
+No cargues todas las habilidades a la vez; consulta únicamente el `SKILL.md` que aplique a la petición actual.
+
+## Regla de Auto-Validación
+Antes de finalizar cualquier refactorización o nueva funcionalidad:
+1. Revisa si el código generado cumple las directrices técnicas del `SKILL.md` correspondiente dentro de `.skills/`.
+2. Si detectas código legacy en el archivo donde estás trabajando, sugiérelo brevemente al usuario como una mejora opcional.
+
+## Regla de Alcance por Plataforma (Nativo vs Web)
+- Los estándares de `.skills/` aplican EXCLUSIVAMENTE a la capa nativa de Android (código Kotlin/Java, carpetas `android/`, gradle, insets nativos y APIs del sistema).
+- NO apliques directrices de R8, AGP o CameraX a la versión web.
+- Mantén la lógica de negocio desacoplada de las dependencias nativas para asegurar compatibilidad con el entorno web.

@@ -392,10 +392,15 @@ class PerfilesProvider extends ChangeNotifier {
     historial.add(victoria);
     perfil.historialVictorias = historial;
 
+    final List<Map<dynamic, dynamic>> catalogo = List.from(perfil.catalogoPremios);
+    catalogo.removeWhere((p) => p['id'] == solicitud['premioId']);
+    perfil.catalogoPremios = catalogo;
+
     if (_uid.isNotEmpty) {
       await _db.collection('familias').doc(_uid).collection('perfiles').doc(perfilId).update({
         'solicitudesCanje': solicitudes,
         'historialVictorias': historial,
+        'catalogoPremios': catalogo,
       });
     } else {
       await perfil.save();

@@ -1,0 +1,38 @@
+# Sistema de Feedback (Firebase Firestore) - Actualización
+
+Se ha identificado y resuelto la causa raíz del error de envío de formulario durante las pruebas.
+
+---
+
+## 🔍 Análisis del Error: Reglas de Seguridad de Firestore
+
+Tu análisis fue **100% acertado**. En Cloud Firestore, toda colección o ruta que no esté explícitamente autorizada en las reglas de seguridad es **bloqueada por defecto** (`PERMISSION_DENIED`).
+
+En [firestore.rules](file:///c:/Users/angel/josue_tareas/firestore.rules) se tenían configuradas reglas para:
+* `/usuarios/{userId}`
+* `/familias/{familiaId}`
+* `/config/app`
+
+La colección **/feedback/{feedbackId}** no existía en el archivo de reglas, por lo que Firebase rechazaba la escritura del documento al enviar el formulario.
+
+---
+
+## 🛠️ Corrección Aplicada
+
+Se agregó la regla de seguridad específica para la colección `feedback` en [firestore.rules](file:///c:/Users/angel/josue_tareas/firestore.rules):
+
+```firestore
+// ======================================================
+// FEEDBACK — Permite crear sugerencias a los usuarios
+//            Lectura, edición y eliminación bloqueadas (solo Firebase Console)
+// ======================================================
+match /feedback/{feedbackId} {
+  allow create: if request.resource.data.message is string &&
+                   request.resource.data.message.size() >= 5;
+  allow read, update, delete: if false;
+}
+```
+
+### Propiedades de esta regla:
+1. **Permiso de creación seguro**: Permite enviar feedback validando que el mensaje sea texto y contenga al menos 5 caracteres.
+2. **Privacidad garantizada (`allow read, update, delete: if false;`)**: Ningún usuario de la app puede leer las opiniones de otros ni modificarlas/borrarlas. Solo tú como administrador puedes verlas en la consola de Firebase.
