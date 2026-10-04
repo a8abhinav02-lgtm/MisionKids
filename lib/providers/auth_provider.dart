@@ -4,7 +4,6 @@ import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/secure_storage_service.dart';
-import '../config/app_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AuthProvider extends ChangeNotifier {
