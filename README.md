@@ -1,16 +1,29 @@
-# josue_tareas
+# Mission Kids
 
-A new Flutter project.
+Aplicación multiplataforma (Android y Web) desarrollada en Flutter para la gestión de tareas, hábitos y recompensas familiares mediante dinámicas de juego (gamificación).
 
-## Getting Started
+## Características principales
 
-This project is a starting point for a Flutter application.
+* **Gestión de tareas y hábitos:** Organización de misiones diarias por bloques (mañana, tarde, noche) con seguimiento de cumplimiento.
+* **Gamificación positiva:** Sistema de estrellas, contador de rachas de días consecutivos y medallas de constancia.
+* **Tienda de recompensas:** Canje de premios con aprobación y supervisión de los padres o tutores.
+* **Seguridad y privacidad:** Puerta parental matemática (Parental Gate), acceso con PIN y funcionamiento híbrido (modo local y sincronización con Firebase).
+* **Notificaciones de actualización:** Detección automática de nuevas versiones publicadas en GitHub Releases.
 
-A few resources to get you started if this is your first Flutter project:
+## Requisitos y ejecución
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Para ejecutar este proyecto en tu entorno local:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. **Prerrequisitos:** Flutter SDK (3.24 o superior) configurado en el sistema.
+2. **Instalar dependencias:**
+   ```bash
+   flutter pub get
+   ```
+3. **Ejecutar en desarrollo:**
+   ```bash
+   flutter run
+   ```
+
+## Compilación y publicaciones
+
+Para generar el archivo instalador (`.apk`) y publicar nuevas versiones, consulta la [Guía de Publicación de Releases](GUIA_PUBLICACION_RELEASE.md).
