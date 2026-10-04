@@ -413,8 +413,8 @@ class AuthProvider extends ChangeNotifier {
       final doc = await _db.collection('config').doc('app').get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
-        final versionAndroid = data['version_android']?.toString() ?? '';
-        final urlAndroid = data['url_android']?.toString() ?? '';
+        final versionAndroid = (data['version_android'] ?? data['latest_version'] ?? '').toString().trim();
+        final urlAndroid = (data['url_android'] ?? data['update_url'] ?? '').toString().trim();
         
         final packageInfo = await PackageInfo.fromPlatform();
         final versionLocal = packageInfo.version;

@@ -55,9 +55,24 @@ class SeleccionPerfilScreen extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () async {
-                          final url = Uri.parse(authProv.urlDescargaActualizacion);
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          final urlStr = authProv.urlDescargaActualizacion.trim();
+                          if (urlStr.isEmpty) return;
+                          final url = Uri.tryParse(urlStr);
+                          if (url != null) {
+                            try {
+                              final launched = await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                              if (!launched) {
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.platformDefault,
+                                );
+                              }
+                            } catch (e) {
+                              debugPrint('[Actualizacion] Error al abrir URL: $e');
+                            }
                           }
                         },
                         borderRadius: BorderRadius.circular(16),
