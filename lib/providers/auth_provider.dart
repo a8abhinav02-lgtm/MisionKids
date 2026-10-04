@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -409,6 +409,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> verificarActualizaciones() async {
+    if (kIsWeb) return; // En la web los cambios se cargan automáticamente desde el servidor
     try {
       final doc = await _db.collection('config').doc('app').get();
       if (doc.exists && doc.data() != null) {
